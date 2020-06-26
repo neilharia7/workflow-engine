@@ -6,11 +6,64 @@ import os
 def custom_function(**kwargs):
 	"""
 	
-	Plan to make kindoff completely custom, plug & play
+	Kindoff completely custom, plug & play
 	though risky
 
 	# TODO break this func into multiple parts
 	:params: kwargs
+
+	# skeleton task file (build under process)
+	{
+		"task_name": "<name of the task>",
+		"parent_task": [<list of parent task>]
+		"type": "branch / http / fetch",
+		"function_name": "custom_function",
+		"request": {
+			"params": [<list of params for required for current task>]
+		},
+		"method": "GET | POST",
+		"child_task": [<list of task to be executed after>], - > `0` -> success task
+		"validations": {
+			"request": [
+				{
+					<possible validations on the keys mentioned in the request.params>
+				}
+			],
+			"response": [
+				{
+					
+				}
+			],
+		},
+		"response": {
+			"200": [
+				{
+					"success": true,	// assuming a success case
+					"response_params": {}  // will be saved by the task_name
+					"child_task": []
+				},
+				{
+					"success": true,	// assuming a reject case
+					"response_params": {}  // will be saved by the task_name
+					"child_task": []
+				}
+			],
+			"400": [
+			
+			],
+			"401": [
+
+			],
+			"500": [
+			]
+		},
+		"store": {
+			"<name of the by which will it be saved>": {
+				"<key>": <val>
+			}
+		}
+	}
+
 	"""
 
 	# TODO check any params are needed to be fetch from previous request / response
@@ -19,14 +72,14 @@ def custom_function(**kwargs):
 	# get all the task information
 	task_info = kwargs.get('template_dict').get('task_info', None)
 
-	# get the list of params for the request
+	# get the list of params for the request (type list)
 	params = task_info.get('request').get('params', None)
 
 	# type check -> http | data store
 	type = task_info.get('type')
 
 	try:
-		# override params passed in the request
+		# override params passed in the request (type dict)
 		params = kwargs.get('dag_run').conf.get('request').get('params')
 	except Exception as e:
 		print(e)  # -> flow is being declared
@@ -81,3 +134,7 @@ def custom_function(**kwargs):
 	elif type == "FETCH":
 		# TODO
 		pass
+
+	# save variables temporarily
+	kwargs['ti'].xcom_push(key='', value='')
+
