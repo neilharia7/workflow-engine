@@ -28,7 +28,7 @@ for files in os.listdir('.'):
 		file_name = files
 
 # Testing
-file_name = 'multi_dag_json.json'
+file_name = 'dag_information.json'
 
 # read the contents of the file
 file_path = current_dir + "/" + file_name
@@ -142,7 +142,7 @@ def create_dynamic_task(task_data: dict, dag):
 		)
 
 
-for dag_data in dag_info.get('json_request'):
+for dag_data in dag_info.get('dag_structure'):
 	
 	# TODO get the list of dags alreay registered
 	

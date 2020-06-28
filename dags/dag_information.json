@@ -1,5 +1,5 @@
 {
-    "json_request":[
+    "dag_structure":[
         {
         	"dag_id": "dynamic1",
         	"retries": 1,
