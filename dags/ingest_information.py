@@ -41,7 +41,7 @@ def ingest_data(**kwargs):
 	if file_name:
 		file += file_name
 		data = json.loads(open(file, 'r+').read())
-		data['dag_structure'].append(params)
+		data['dag_structure'].append(params[0])
 		
 		with open(file, 'w+') as f:
 			f.write(json.dumps(data))
