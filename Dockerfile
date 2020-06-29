@@ -38,7 +38,7 @@ RUN set -ex \
         libssl-dev \
         libffi-dev \
         libpq-dev \
-        git \
+	git \
     ' \
     && apt-get update -yqq \
     && apt-get upgrade -yqq \
@@ -89,8 +89,11 @@ RUN chown -R airflow: ${AIRFLOW_USER_HOME}
 
 EXPOSE 8080 5555 8793
 
-USER root
+USER airflow
 WORKDIR ${AIRFLOW_USER_HOME}
 
 ENTRYPOINT ["/entrypoint.sh"]
+
+RUN chmod a+rw ./
+
 CMD ["webserver"]

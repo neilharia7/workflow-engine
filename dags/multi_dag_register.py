@@ -131,7 +131,8 @@ print(os.listdir(os.path.join(current_dir, "dags")))
 
 # check if there exist a json file
 file_name = None
-for files in os.listdir(os.path.join(current_dir, "dags")):
+folder = "dags"
+for files in os.listdir(os.path.join(current_dir, folder)):
 	if files.endswith(".json") and files != "airflow_vars.json":
 		file_name = files
 		break
@@ -139,7 +140,7 @@ for files in os.listdir(os.path.join(current_dir, "dags")):
 print("file_name", file_name)
 if file_name:
 	# read the contents of the file
-	file_path = current_dir + "/dags/" + file_name
+	file_path = current_dir + "/" + folder + "/" + file_name
 	dag_info = json.loads(open(file_path, 'r+').read())
 	
 	for dag_data in dag_info.get('dag_structure', []):
@@ -194,4 +195,3 @@ if file_name:
 			task_register[0].set_downstream(end)
 			
 			globals()[dag_data.get('dag_id')] = dag
-
