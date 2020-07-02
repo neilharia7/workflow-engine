@@ -2,12 +2,12 @@ import datetime as dt
 import json
 import os
 
-import requests
 from airflow import DAG
-from airflow.models import Variable
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import BranchPythonOperator, PythonOperator
-from tasks_functions.functions import *
+
+from dags.tasks_functions.custom_functions import customized_function
+from dags.zeus.utils import *
 
 default_args = {
 	'owner': 'neilharia7',
@@ -17,7 +17,6 @@ default_args = {
 }
 
 
-# TODO add custom retries configurations for each task?
 def create_dynamic_task(task_data: dict, __dag__):
 	"""
 	
@@ -30,7 +29,7 @@ def create_dynamic_task(task_data: dict, __dag__):
 		return BranchPythonOperator(
 			task_id=task_data.get('task_name'),
 			provide_context=True,
-			python_callable=eval(task_data.get('function_name')),
+			python_callable=customized_function,
 			trigger_rule="all_done",
 			op_kwargs=task_data.get('request'),
 			templates_dict={
@@ -40,12 +39,12 @@ def create_dynamic_task(task_data: dict, __dag__):
 			dag=__dag__
 		)
 	
-	elif task_data['type'] == "http":
+	elif task_data['type'] in ["api", "start"]:
 		
 		return PythonOperator(
 			task_id=task_data.get('task_name'),
 			provide_context=True,
-			python_callable=eval(task_data.get('function_name')),
+			python_callable=customized_function,
 			depends_on_past=True,
 			do_xcom_push=True,
 			op_kwargs=task_data.get('request'),
@@ -53,6 +52,19 @@ def create_dynamic_task(task_data: dict, __dag__):
 				"task_info": task_data
 			},
 			trigger_rule="all_done",
+			dag=__dag__
+		)
+	
+	elif task_data['type'] == "utility":
+		
+		return PythonOperator(
+			task_id=task_data.get('task_name'),
+			provide_context=True,
+			python_callable=eval(task_data.get("transform_type")),
+			do_xcom_push=True,
+			templates_dict={
+				"task_info": task_data
+			},
 			dag=__dag__
 		)
 
@@ -85,7 +97,9 @@ if file_name:
 			'owner': default_args.get('owner'),
 			'start_date': dt.datetime(2020, 6, 26),
 			'retries': dag_info.get('retries', default_args.get('retries')),
-			'retry_delay': dt.timedelta(seconds=30)
+			'retry_delay': dt.timedelta(seconds=30),
+			'max_retry_delay': dag_info.get('max_retry_delay', 3600),
+			'retry_exponential_backoff': dag_info.get('exponential_retry', True)
 		}
 		
 		with DAG(
@@ -95,12 +109,12 @@ if file_name:
 		) as dag:
 			
 			start = DummyOperator(
-				task_id='start',
+				task_id='initiate_workflow',
 				dag=dag
 			)
 			
 			end = DummyOperator(
-				task_id='end',
+				task_id='terminate_workflow',
 				dag=dag
 			)
 			
@@ -126,4 +140,5 @@ if file_name:
 			
 			task_register[0].set_downstream(end)
 			
+			# dynamic dag registration
 			globals()[dag_data.get('dag_id')] = dag
