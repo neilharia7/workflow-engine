@@ -6,7 +6,7 @@ import os
 def custom_function(**kwargs):
 	"""
 	
-	Kindoff completely custom, plug & play
+	Kind off completely custom, plug & play
 	though risky
 
 	# TODO break this func into multiple parts
@@ -129,7 +129,6 @@ def custom_function(**kwargs):
 			# exception kind of too broad
 			# TODO Throw alert
 			raise ValueError('force retry')
-
 
 	elif type == "FETCH":
 		# TODO

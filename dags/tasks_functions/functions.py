@@ -15,7 +15,7 @@ def age_validator(**kwargs):
         print(e)
         pass
     
-    # TODO add logics
+    # TODO add logic
     partner_name = params.get('partner')
     age = params.get('age')
     

@@ -41,6 +41,15 @@ def ingest_data(**kwargs):
 	if file_name:
 		file += file_name
 		data = json.loads(open(file, 'r+').read())
+		
+		# check if the given dag id already exist in the json file
+		for idx in range(len(data['data_structure'])):
+			# assuming only one flow will be registered at a time
+			if data['data_structure'][idx]['dag_id'] == params[0]['dag_id']:
+				del data['data_structure'][idx]
+				break
+		
+		# overwrite dag in case else append new dag
 		data['dag_structure'].append(params[0])
 		
 		with open(file, 'w+') as f:
