@@ -1,7 +1,7 @@
-import os
+import json
 
 import requests
-from airflow.models import Variable
+
 from dags.zeus.utils import create_request
 
 
@@ -46,7 +46,22 @@ def customized_function(**kwargs):
 			
 		response_structure = task_info.get('response')
 		
-		# TODO check response
+		for status, resp_data in response_structure.items():
+			if response.status_code == int(status):
+			
+				# check if all keys are present as expected in response
+				try:
+					# no clue whether its response.text or response.json()
+					# TODO get clue
+					if set(json.loads(response.text)) == set(resp_data):
+						
+						# save the response and proceed to subsequent task
+						kwargs['ti'].xcom_push(key='response', value=json.loads(response.text))
+						
+						return resp_data.get('next_data')
+				except Exception as e:
+					
+					raise Exception(e)
 	
 	elif task_info.get('type') == "start":
 		
@@ -56,137 +71,3 @@ def customized_function(**kwargs):
 		# save variables for future use
 		kwargs['ti'].xcom_push(key='start', value=fields)
 		
-		
-# def custom_function(**kwargs):
-# 	"""
-#
-# 	Kind off completely custom, plug & play
-# 	though risky
-#
-# 	# TODO break this func into multiple parts
-# 	:params: kwargs
-#
-# 	# skeleton task file (build under process)
-# 	{
-# 		"task_name": "<name of the task>",
-# 		"parent_task": [<list of parent task>]
-# 		"type": "branch / http / fetch",
-# 		"function_name": "custom_function",
-# 		"request": {
-# 			"params": [<list of params for required for current task>]
-# 		},
-# 		"method": "GET | POST",
-# 		"child_task": [<list of task to be executed after>], - > `0` -> success task
-# 		"validations": {
-# 			"request": [
-# 				{
-# 					<possible validations on the keys mentioned in the request.params>
-# 				}
-# 			],
-# 			"response": [
-# 				{
-#
-# 				}
-# 			],
-# 		},
-# 		"response": {
-# 			"200": [
-# 				{
-# 					"success": true,	// assuming a success case
-# 					"response_params": {}  // will be saved by the task_name
-# 					"child_task": []
-# 				},
-# 				{
-# 					"success": true,	// assuming a reject case
-# 					"response_params": {}  // will be saved by the task_name
-# 					"child_task": []
-# 				}
-# 			],
-# 			"400": [
-#
-# 			],
-# 			"401": [
-#
-# 			],
-# 			"500": [
-# 			]
-# 		},
-# 		"store": {
-# 			"<name of the by which will it be saved>": {
-# 				"<key>": <val>
-# 			}
-# 		}
-# 	}
-#
-# 	"""
-#
-# 	# TODO check any params are needed to be fetch from previous request / response
-# 	# TODO add aws integration for mapping in future API calls in the DAG
-#
-# 	# get all the task information
-# 	task_info = kwargs.get('template_dict').get('task_info', None)
-#
-# 	# get the list of params for the request (type list)
-# 	params = task_info.get('request').get('params', None)
-#
-# 	# type check -> http | data store
-# 	type = task_info.get('type')
-#
-# 	try:
-# 		# override params passed in the request (type dict)
-# 		params = kwargs.get('dag_run').conf.get('request').get('params')
-# 	except Exception as e:
-# 		print(e)  # -> flow is being declared
-#
-# 	if type == "HTTP":
-# 		# assume method & url is present in the task_info
-# 		method = task_info.get('method')
-#
-# 		# get the environment defined in the dockerfile
-# 		env = os.environ.get('env', 'dev')
-#
-# 		# get the url and headers from the airflow UI
-# 		url = Variable.get(task_info('base_url') + "_" + env, '') + task_info.get('url')
-# 		headers = Variable.get(task_info('headers') + "_" + env, {})
-#
-# 		# damn gotta handle request validation too
-#
-# 		try:
-# 			if method == "GET":
-# 				response = requests.get(url=url, headers=headers)
-#
-# 			else:
-# 				# check if the data is needed to be passed in form-type or json
-# 				if task_info.get('send_type') == 'json':
-# 					response = requests.post(url=url, headers=headers, json=params)
-# 				else:  # form-data
-# 					response = requests.post(url=url, headers=headers, data=params)
-#
-# 			# TODO make much modular
-# 			# test sample
-# 			accepted_status_codes = task_info.get('response').get('success_codes', 200)
-#
-# 			if response.status_code in accepted_status_codes:
-# 				# TODO configure dynamically
-#
-# 				# call child task
-# 				return task_info.get('child_task')[0]
-#
-# 			elif response.status_code == 401:
-# 				raise ValueError('forcing retry')  # test
-#
-# 			elif response.status_code == 500:
-# 				return task_info.get('child_task')[-1]
-#
-# 		except Exception as e:
-# 			print(e)
-# 			# exception kind of too broad
-# 			# TODO Throw alert
-# 			raise ValueError('force retry')
-#
-# 	elif type == "FETCH":
-# 		# TODO
-# 		pass
-#
-# 	# save variables temporarily
-# 	kwargs['ti'].xcom_push(key='', value='')
