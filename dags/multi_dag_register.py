@@ -39,7 +39,7 @@ def create_dynamic_task(task_data: dict, __dag__):
 			dag=__dag__
 		)
 	
-	elif task_data['type'] in ["api", "start", "http"]:
+	elif task_data['type'] in ["api", "start", "http", "decision"]:
 		
 		return PythonOperator(
 			task_id=task_data.get('task_name'),
