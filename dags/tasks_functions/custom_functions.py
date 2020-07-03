@@ -90,4 +90,4 @@ def customized_function(**kwargs):
 				
 				# trigger subsequent task
 				return rule_info.get('result')
-			
+

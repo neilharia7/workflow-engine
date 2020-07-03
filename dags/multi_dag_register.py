@@ -39,7 +39,7 @@ def create_dynamic_task(task_data: dict, __dag__):
 			dag=__dag__
 		)
 	
-	elif task_data['type'] in ["api", "start", "http", "decision"]:
+	elif task_data['type'] in ["api", "start", "http", "decision", "end"]:
 		
 		return PythonOperator(
 			task_id=task_data.get('task_name'),
@@ -88,6 +88,7 @@ if file_name:
 	dag_info = json.loads(open(file_path, 'r+').read())
 	
 	for dag_data in dag_info.get('dag_structure', []):
+		print(dag_data)
 		
 		# TODO get the list of dags already registered
 		
