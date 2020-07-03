@@ -2,7 +2,7 @@ import json
 
 import requests
 
-from dags.zeus.utils import create_request
+from zeus.utils import create_request
 
 
 def customized_function(**kwargs):

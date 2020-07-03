@@ -6,8 +6,8 @@ from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import BranchPythonOperator, PythonOperator
 
-from dags.tasks_functions.custom_functions import customized_function
-from dags.zeus.utils import *
+from tasks_functions.custom_functions import customized_function
+from zeus.utils import *
 
 default_args = {
 	'owner': 'neilharia7',
@@ -39,7 +39,7 @@ def create_dynamic_task(task_data: dict, __dag__):
 			dag=__dag__
 		)
 	
-	elif task_data['type'] in ["api", "start"]:
+	elif task_data['type'] in ["api", "start", "http"]:
 		
 		return PythonOperator(
 			task_id=task_data.get('task_name'),
