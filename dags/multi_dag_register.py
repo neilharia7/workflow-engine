@@ -127,6 +127,7 @@ if file_name:
 			
 			task_len = len(task_register)
 			
+			# TODO fix mapping
 			# dynamic mapping
 			for child_idx, child_info in enumerate(reverse_dict['data']):
 				
@@ -135,11 +136,14 @@ if file_name:
 						
 						if parent_info.get('task_name') in child_info.get('parent_task'):
 							task_register[child_idx] << task_register[task_len - parent_idx - 1]
+							
+						# connect the end node
+						if not parent_info.get('child_task'):
+							task_register[task_len - parent_idx - 1] >> end
 				
 				else:  # map start to orphan task
 					start >> task_register[child_idx]
 			
-			task_register[0].set_downstream(end)
-			
 			# dynamic dag registration
 			globals()[dag_data.get('dag_id')] = dag
+
