@@ -23,8 +23,10 @@ dag = DAG(
 
 
 def ingest_data(**kwargs):
+	dag_struct = 'dag_structure'
+	
 	# save the json file in the current dir
-	params = kwargs['dag_run'].conf['dag_structure']
+	params = kwargs['dag_run'].conf[dag_struct]
 	print(params)
 	print(os.getcwd())
 	
@@ -41,12 +43,13 @@ def ingest_data(**kwargs):
 	if file_name:
 		file += file_name
 		data = json.loads(open(file, 'r+').read())
+		print(data)
 		
 		# check if the given dag id already exist in the json file
-		for idx in range(len(data['data_structure'])):
+		for idx in range(len(data[dag_struct])):
 			# assuming only one flow will be registered at a time
-			if data['data_structure'][idx]['dag_id'] == params[0]['dag_id']:
-				del data['data_structure'][idx]
+			if data[dag_struct][idx]['dag_id'] == params[0]['dag_id']:
+				del data[dag_struct][idx]
 				break
 		
 		# overwrite dag in case else append new dag
@@ -80,3 +83,4 @@ end = DummyOperator(
 )
 
 start >> dataDog >> end
+
