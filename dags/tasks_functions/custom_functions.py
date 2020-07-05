@@ -24,16 +24,37 @@ def customized_function(**kwargs):
 		task_instance = kwargs['ti']
 		# transform_type, input & output keys will be empty
 		
-		# pull data from parent task(s)
-		complete_data = task_instance.xcom_pull(key=None, task_ids=task_info.get('parent_task'))
+		# get the total number of parents
+		parent_tasks = task_info.get('parent_task')
 		
-		request = task_info.get('request')
+		# pull data from parent task(s)
+		complete_data = task_instance.xcom_pull(key=None, task_ids=parent_tasks)
+		
+		if len(parent_tasks) == 1:
+			complete_data = complete_data[0]
+		
+		else:
+			temp = complete_data[0]  # dict hopefully
+			
+			# assuming tuple of dict
+			for idx in range(1, len(complete_data)):
+				temp.update(complete_data[idx])
+			
+			complete_data = temp
+		
+		request = task_info.get('request', {})  # empty dict if no request in case of GET method
 		method = task_info.get('method')
 		url = task_info.get('url')
 		headers = task_info.get('headers')
 		
 		# build request body
 		payload = create_request(request, complete_data)
+		
+		try:
+			# if passed through API, override
+			payload = kwargs['dag_run'].conf['request']['params']
+		except Exception as e:
+			print(e)
 		
 		if method == "GET":
 			response = requests.get(url=url, headers=headers)
