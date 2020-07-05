@@ -16,15 +16,16 @@ def customized_function(**kwargs):
 	"""
 	
 	# get all the task information
-	task_info = kwargs.get('template_dict').get('task_info', None)
-	
+	task_info = kwargs.get('templates_dict').get('task_info', None)
+	print("task_info")
+	print(task_info)
 	# check the type
 	if task_info.get('type') == "api":
 		task_instance = kwargs['ti']
 		# transform_type, input & output keys will be empty
 		
 		# pull data from parent task(s)
-		complete_data = task_instance.xcom_pull(task_ids=task_info.get('parent_task'))
+		complete_data = task_instance.xcom_pull(key=None, task_ids=task_info.get('parent_task'))
 		
 		request = task_info.get('request')
 		method = task_info.get('method')
@@ -66,6 +67,12 @@ def customized_function(**kwargs):
 		# get fields to be pushed in xcom
 		fields = task_info.get('fields')  # dict mostly
 		
+		try:
+			# if passed through API, override
+			fields = kwargs['dag_run'].conf['request']['params']
+		except Exception as e:
+			print(e)
+		
 		# save variables for future use
 		kwargs['ti'].xcom_push(key='start', value=fields)
 	
@@ -73,8 +80,22 @@ def customized_function(**kwargs):
 		
 		task_instance = kwargs['ti']
 		
-		# pull data from parent task(s)
-		complete_data = task_instance.xcom_pull(task_ids=task_info.get('parent_task'))
+		# get the total number of parents
+		parent_tasks = task_info.get('parent_task')
+		
+		complete_data = task_instance.xcom_pull(key=None, task_ids=parent_tasks)
+		
+		if len(parent_tasks) == 1:
+			complete_data = complete_data[0]
+		
+		else:
+			temp = complete_data[0]  # dict hopefully
+			
+			# assuming tuple of dict
+			for idx in range(1, len(complete_data)):
+				temp.update(complete_data[idx])
+
+			complete_data = temp
 		
 		# get the rule(s)
 		queries = task_info.get('query_logic')  # list
