@@ -27,7 +27,7 @@ def ingest_data(**kwargs):
 	
 	# save the json file in the current dir
 	params = kwargs['dag_run'].conf[dag_struct]
-	print(params)
+	# print(params)
 	print(os.getcwd())
 	
 	# check if json files is already there
@@ -43,7 +43,7 @@ def ingest_data(**kwargs):
 	if file_name:
 		file += file_name
 		data = json.loads(open(file, 'r+').read())
-		print(data)
+		# print(data)
 		
 		# check if the given dag id already exist in the json file
 		for idx in range(len(data[dag_struct])):

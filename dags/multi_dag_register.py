@@ -24,13 +24,13 @@ def create_dynamic_task(task_data: dict, __dag__):
 	:param __dag__:
 	:return:
 	"""
-	if task_data['type'] == "branch":
+	if task_data['type'] in ["branch", "decision", "api"]:
 		
 		return BranchPythonOperator(
 			task_id=task_data.get('task_name'),
 			provide_context=True,
 			python_callable=customized_function,
-			trigger_rule="all_done",
+			trigger_rule="one_success",
 			op_kwargs=task_data.get('request'),
 			templates_dict={
 				"task_info": task_data,
@@ -39,7 +39,7 @@ def create_dynamic_task(task_data: dict, __dag__):
 			dag=__dag__
 		)
 	
-	elif task_data['type'] in ["api", "start", "http", "decision", "end"]:
+	elif task_data['type'] in ["start", "http", "end"]:
 		
 		return PythonOperator(
 			task_id=task_data.get('task_name'),
@@ -62,6 +62,7 @@ def create_dynamic_task(task_data: dict, __dag__):
 			provide_context=True,
 			python_callable=eval(task_data.get("transform_type")),
 			do_xcom_push=True,
+			trigger_rule="one_success",
 			templates_dict={
 				"task_info": task_data
 			},
@@ -99,7 +100,7 @@ if file_name:
 			'start_date': dt.datetime(2020, 6, 26),
 			'retries': dag_info.get('retries', default_args.get('retries')),
 			'retry_delay': dt.timedelta(seconds=30),
-			'max_retry_delay': dag_info.get('max_retry_delay', 3600),
+			'max_retry_delay': dt.timedelta(seconds=dag_info.get('max_retry_delay', 3600)),
 			'retry_exponential_backoff': dag_info.get('exponential_retry', True)
 		}
 		
@@ -146,4 +147,5 @@ if file_name:
 			
 			# dynamic dag registration
 			globals()[dag_data.get('dag_id')] = dag
+
 

@@ -67,7 +67,7 @@ def concat(**kwargs):
 	"""
 	
 	# get all the task information
-	task_info = kwargs.get('template_dict').get('task_info', None)
+	task_info = kwargs.get('templates_dict').get('task_info', None)
 	
 	task_instance = kwargs['ti']
 	
