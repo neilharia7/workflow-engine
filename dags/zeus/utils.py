@@ -69,27 +69,45 @@ def concat(**kwargs):
 	# get all the task information
 	task_info = kwargs.get('templates_dict').get('task_info', None)
 	
+	print("task_info", task_info)
 	task_instance = kwargs['ti']
 	
 	# get data from previous tasks
-	complete_data = task_instance.xcom_pull(task_ids=task_info.get('parent_task'))
+	complete_data = task_instance.xcom_pull(key=None, task_ids=task_info.get('parent_task'))
 	
-	inputs = task_info.get('input')  # list
-	output_field_name = task_info.get('output')[0]
+	if len(complete_data) == 1:
+		complete_data = complete_data[0]
+	
+	else:
+		temp = {}
+		# assuming tuple of dict
+		for idx in range(len(complete_data)):
+			if isinstance(complete_data[idx], dict):
+				temp.update(complete_data[idx])
+		
+		complete_data = temp
+	
+	print("complete_data", complete_data)
+	
+	inputs = task_info.get('input')  # dict
+	output = task_info.get('output')  # dict
 	
 	# converts 200.data.First-Name -> First-Name etc
-	inputs = [keys.split('.')[-1] for keys in inputs]
+	inputs = [key.split('.')[-1] for key, val in inputs.items()]
 	
-	output = ""
+	transform = ""
 	
 	for key, value in complete_data.items():
 		if key in inputs:
-			output += " " + value
+			transform += " " + value
 	
-	output.strip()
+	transform = transform.strip()
 	
-	# save the transformed response	to xcom
-	kwargs['ti'].xcom_push(key=output_field_name, value=output)
+	for key, value in output.items():
+		# save the transformed response	to xcom
+		kwargs['ti'].xcom_push(key=key, value={key: transform})
+	
+	return task_info.get('child_task')[0]
 
 
 def schema_builder(json_data):
@@ -160,7 +178,8 @@ def schema_builder(json_data):
 						{
 							"rule": port['extras']['condition']['logic'],
 							"data": port['extras']['condition']['data'],
-							"result": [c_val['target'] for c_key, c_val in layer_0_data['models'].items() if port['links'][0] == c_key][0]
+							"result": [c_val['target'] for c_key, c_val in layer_0_data['models'].items() if
+							           port['links'][0] == c_key][0]
 						})
 		
 		# connect child nodes
@@ -218,7 +237,8 @@ def logic_decoder(rules, data=None):
 			reduce(
 				lambda data, key: (
 					data.get(key, not_found) if type(data) == dict else data[int(key)]
-					if (type(data) in [list, tuple] and str(key).lstrip("-").isdigit()) else not_found), str(a).split("."), data
+					if (type(data) in [list, tuple] and str(key).lstrip("-").isdigit()) else not_found),
+				str(a).split("."), data
 			)
 		),
 		"cat": (lambda *args: "".join(args)),
@@ -244,3 +264,4 @@ def logic_decoder(rules, data=None):
 	values = map(lambda val: logic_decoder(val, data), values)
 	
 	return operations[ops](*values)
+

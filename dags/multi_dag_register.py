@@ -5,7 +5,6 @@ import os
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import BranchPythonOperator, PythonOperator
-
 from tasks_functions.custom_functions import customized_function
 from zeus.utils import *
 
@@ -24,14 +23,31 @@ def create_dynamic_task(task_data: dict, __dag__):
 	:param __dag__:
 	:return:
 	"""
-	if task_data['type'] in ["branch", "decision", "api"]:
+	
+	if task_data['type'] in ['start']:  # the first task that works
 		
-		return BranchPythonOperator(
+		return PythonOperator(
 			task_id=task_data.get('task_name'),
 			provide_context=True,
 			python_callable=customized_function,
-			trigger_rule="one_success",
+			do_xcom_push=True,
 			op_kwargs=task_data.get('request'),
+			templates_dict={
+				"task_info": task_data
+			},
+			dag=__dag__
+		)
+	
+	# TODO configure in customized function
+	if task_data['type'] in ['webhook_reject']:
+		
+		return PythonOperator(
+			task_id=task_data.get('task_name'),
+			provide_context=True,
+			python_callable=customized_function,
+			trigger_rule="all_done",
+			op_kwargs=task_data.get('request'),
+			depends_on_past=True,
 			templates_dict={
 				"task_info": task_data,
 			},
@@ -39,23 +55,39 @@ def create_dynamic_task(task_data: dict, __dag__):
 			dag=__dag__
 		)
 	
-	elif task_data['type'] in ["start", "http", "end"]:
+	elif task_data['type'] in ["decision", "api"]:
+		
+		return BranchPythonOperator(
+			task_id=task_data.get('task_name'),
+			provide_context=True,
+			python_callable=customized_function,
+			trigger_rule="one_success",
+			op_kwargs=task_data.get('request'),
+			depends_on_past=True,
+			templates_dict={
+				"task_info": task_data,
+			},
+			do_xcom_push=True,
+			dag=__dag__
+		)
+	
+	elif task_data['type'] in ["webhook_success"]:
 		
 		return PythonOperator(
 			task_id=task_data.get('task_name'),
 			provide_context=True,
 			python_callable=customized_function,
-			depends_on_past=True,
-			do_xcom_push=True,
+			trigger_rule="one_success",
 			op_kwargs=task_data.get('request'),
+			depends_on_past=True,
 			templates_dict={
-				"task_info": task_data
+				"task_info": task_data,
 			},
-			trigger_rule="all_done",
+			do_xcom_push=True,
 			dag=__dag__
 		)
 	
-	elif task_data['type'] == "utility":
+	elif task_data['type'] in ["utility"]:
 		
 		return PythonOperator(
 			task_id=task_data.get('task_name'),
@@ -66,6 +98,14 @@ def create_dynamic_task(task_data: dict, __dag__):
 			templates_dict={
 				"task_info": task_data
 			},
+			dag=__dag__
+		)
+	
+	elif task_data['type'] == "end":
+		
+		return DummyOperator(
+			task_id=task_data.get('task_name'),
+			trigger_rule="all_done",
 			dag=__dag__
 		)
 
@@ -89,7 +129,7 @@ if file_name:
 	dag_info = json.loads(open(file_path, 'r+').read())
 	
 	for dag_data in dag_info.get('dag_structure', []):
-		print(dag_data)
+		# print(dag_data)
 		
 		# TODO get the list of dags already registered
 		
@@ -128,7 +168,6 @@ if file_name:
 			
 			task_len = len(task_register)
 			
-			# TODO fix mapping
 			# dynamic mapping
 			for child_idx, child_info in enumerate(reverse_dict['data']):
 				
@@ -137,7 +176,7 @@ if file_name:
 						
 						if parent_info.get('task_name') in child_info.get('parent_task'):
 							task_register[child_idx] << task_register[task_len - parent_idx - 1]
-							
+						
 						# connect the end node
 						if not parent_info.get('child_task'):
 							task_register[task_len - parent_idx - 1] >> end
@@ -147,5 +186,4 @@ if file_name:
 			
 			# dynamic dag registration
 			globals()[dag_data.get('dag_id')] = dag
-
 

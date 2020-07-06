@@ -52,14 +52,18 @@ def customized_function(**kwargs):
 		url = task_info.get('url')
 		headers = task_info.get('headers')
 		
-		# build request body
-		payload = create_request(request, complete_data)
-		
+		# will be removed
 		try:
 			# if passed through API, override
-			payload = kwargs['dag_run'].conf['request']['params']
+			user_input = kwargs['dag_run'].conf['request']['params']
+			print("user input", user_input)
+			if isinstance(user_input, dict):
+				complete_data.update(user_input)
 		except Exception as e:
 			print(e)
+			
+		# build request body
+		payload = create_request(request, complete_data)
 		
 		print("payload", payload)
 		if method == "GET":
@@ -200,4 +204,10 @@ def customized_function(**kwargs):
 					result_task.append(rule_info.get('result'))
 			
 			return list(set(child_tasks) - set(result_task))[0]
+		
+	elif task_info.get('type') in ["webhook_success", "webhook_reject"]:
+		return task_info.get('child_task')[0]
+	
+	
+
 
