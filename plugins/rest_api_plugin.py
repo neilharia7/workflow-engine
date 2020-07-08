@@ -9,7 +9,6 @@ from airflow.www.app import csrf
 from flask import Blueprint, request, jsonify
 from flask_admin import BaseView as AdminBaseview, expose as admin_expose
 from flask_login import current_user
-from flask_login.mixins import AnonymousUserMixin
 from flask_login.utils import _get_user
 
 from datetime import datetime
@@ -229,7 +228,8 @@ apis_metadata = [
     },
     {
         "name": "test",
-        "description": "Test a task instance. This will run a task without checking for dependencies or recording it's state in the database.",
+        "description": "Test a task instance. This will run a task without checking for dependencies or recording "
+                       "it's state in the database.",
         "airflow_version": "0.1 or greater",
         "http_method": ["GET", "POST"],
         "arguments": [
@@ -559,11 +559,13 @@ class REST_API_Response_Util():
         logging.warning("Returning a 500 Response Code with response '" + str(output) + "'")
         return REST_API_Response_Util._get_error_response(base_response, 500, output)
 
+
 def get_baseview():
-    if rbac_authentication_enabled == True:
+    if rbac_authentication_enabled:
         return AppBuilderBaseView
     else:
         return AdminBaseview
+
 
 # REST_API View which extends either flask AppBuilderBaseView or flask AdminBaseView
 class REST_API(get_baseview()):
@@ -809,7 +811,8 @@ class REST_API(get_baseview()):
     def deploy_dag(self, base_response):
         logging.info("Executing custom 'deploy_dag' function")
 
-        if 'dag_file' not in request.files or request.files['dag_file'].filename == '':  # check if the post request has the file part
+        # check if the post request has the file part
+        if 'dag_file' not in request.files or request.files['dag_file'].filename == '':
             logging.warning("The dag_file argument wasn't provided")
             return REST_API_Response_Util.get_400_error_response(base_response, "dag_file should be provided")
         dag_file = request.files['dag_file']
@@ -968,9 +971,10 @@ class REST_API(get_baseview()):
             output["stdout"] = "\n".join(new_stdout_array)
         return output
 
+
 # Creating View to be used by Plugin
-if rbac_authentication_enabled == True:
-    rest_api_view = {"category" : "Admin", "name" : "REST API Plugin",  "view": REST_API()}
+if rbac_authentication_enabled:
+    rest_api_view = {"category": "Admin", "name": "REST API Plugin",  "view": REST_API()}
 else:
     rest_api_view = REST_API(category="Admin", name="REST API Plugin")
 

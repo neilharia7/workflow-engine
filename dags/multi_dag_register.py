@@ -16,6 +16,7 @@ default_args = {
 }
 
 
+# TODO update for custom level task retries
 def create_dynamic_task(task_data: dict, __dag__):
 	"""
 	
@@ -38,7 +39,6 @@ def create_dynamic_task(task_data: dict, __dag__):
 			dag=__dag__
 		)
 	
-	# TODO configure in customized function
 	if task_data['type'] in ['webhook_reject']:
 		
 		return PythonOperator(

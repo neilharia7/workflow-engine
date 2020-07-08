@@ -1,5 +1,4 @@
 # utilities module
-import json
 import sys
 from datetime import datetime
 from functools import reduce
@@ -110,97 +109,6 @@ def concat(**kwargs):
 	return task_info.get('child_task')[0]
 
 
-def schema_builder(json_data):
-	"""
-
-	:param json_data:
-	:return:
-	"""
-	# initial structure
-	transformed_json = {
-		'dag_id': json_data.get('id'),
-		'retries': 5,
-		'retry_delay': 30,
-		'retry_exponential_backoff': True,
-		'max_retry_delay': 3600,
-		'data': []
-	}
-	
-	# layer split
-	layer_1_data = json_data.get('layers')[1]
-	layer_0_data = json_data.get('layers')[0]
-	
-	for task_name, task_data in layer_1_data['models'].items():
-		task_definition = {
-			'task_name': task_data['extras']['data']['name'],
-			'task_id': task_data['id'],
-			'type': task_data['extras']['data']['type'],
-			'parent_task': [],
-			'child_task': [],
-			'data_from_parent_node': task_data['extras'].get('dataFromPreviousNode', []),
-			'transform_type': '',
-			'input': [],  # for data transformations
-			'output': [],  # for data transformations
-		}
-		
-		if task_definition['type'] == 'api':
-			task_definition['request'] = task_data['extras']['data']['requestbody']
-			task_definition['headers'] = task_data['extras']['data']['header']
-			task_definition['method'] = task_data['extras']['data']['method']
-			
-			response = task_data['extras']['data']['response']
-			
-			# map all the tasks needed to be called in the respective response
-			for port in task_data['ports']:
-				for key, val in response.items():
-					if port['name'].isdigit() and port['name'] == key:
-						val['next_task'] = [
-							c_val['target'] for c_key, c_val in layer_0_data['models'].items() if
-							port['links'][0] == c_key][0]
-			
-			task_definition['response'] = response
-		
-		if task_definition['type'] == 'utility':
-			task_definition['transform_type'] = task_data['extras']['data']['operation']['name'].lower()
-			
-			# TODO add remaining conditions
-			if task_data['extras']['data']['operation']['name'].lower() == "concat":
-				task_definition['input'] = task_data['extras']['data']['operation']['inputs']['fields']
-				task_definition['output'] = task_data['extras']['data']['operation']['output']
-		
-		if task_definition['type'] == 'decision':
-			
-			task_definition['query_logic'] = []
-			
-			for port in task_data['ports']:
-				if port.get('extras') and port['extras'].get('condition'):
-					task_definition['query_logic'].append(
-						{
-							"rule": port['extras']['condition']['logic'],
-							"data": port['extras']['condition']['data'],
-							"result": [c_val['target'] for c_key, c_val in layer_0_data['models'].items() if
-							           port['links'][0] == c_key][0]
-						})
-		
-		# connect child nodes
-		for conn in task_data.get('ports'):
-			for node_key, val in layer_0_data['models'].items():
-				if conn.get('links')[0] == node_key and task_definition['task_name'] != val.get('target'):
-					task_definition['child_task'].append(val.get('target'))
-		
-		# connect parent nodes
-		for conn in task_data.get('portsInOrder'):
-			for node_key, val in layer_0_data['models'].items():
-				if conn == val.get('targetPort'):
-					task_definition['parent_task'].append(val.get('source'))
-		
-		transformed_json['data'].append(task_definition)
-	
-	print(json.dumps(transformed_json, indent=4))
-	
-	return transformed_json
-
-
 def logic_decoder(rules, data=None):
 	"""
 	
@@ -264,4 +172,3 @@ def logic_decoder(rules, data=None):
 	values = map(lambda val: logic_decoder(val, data), values)
 	
 	return operations[ops](*values)
-
