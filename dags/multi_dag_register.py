@@ -112,12 +112,12 @@ def create_dynamic_task(task_data: dict, __dag__):
 
 # switch to current directory
 current_dir = os.getcwd()
-print(os.listdir(os.path.join(current_dir, "dags")))
+print(os.listdir(os.path.join(os.path.join(current_dir, "dags"), "efs")))
 
 # check if there exist a json file
 file_name = None
 folder = "dags"
-for files in os.listdir(os.path.join(current_dir, folder)):
+for files in os.listdir(os.path.join(os.path.join(current_dir, folder), "efs")):
 	if files.endswith(".json") and files != "airflow_vars.json":
 		file_name = files
 		break
@@ -125,7 +125,7 @@ for files in os.listdir(os.path.join(current_dir, folder)):
 print("file_name", file_name)
 if file_name:
 	# read the contents of the file
-	file_path = current_dir + "/" + folder + "/" + file_name
+	file_path = current_dir + "/" + folder + "/efs/" + file_name
 	dag_info = json.loads(open(file_path, 'r+').read())
 	
 	for dag_data in dag_info.get('dag_structure', []):
