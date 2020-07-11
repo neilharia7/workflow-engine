@@ -39,7 +39,7 @@ def ingest_data(**kwargs):
 			file_name = files
 			break
 	
-	file = current_dir + "/" + folder_name + "/efs/"
+	file = current_dir + "/" + folder_name + "/efs/" 
 	if file_name:
 		file += file_name
 		data = json.loads(open(file, 'r+').read())

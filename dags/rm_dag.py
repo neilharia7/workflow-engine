@@ -34,13 +34,13 @@ def ingest_data(**kwargs):
 	current_dir = os.getcwd()
 	file_name = None
 	
-	for files in os.listdir(os.path.join(current_dir, folder_name)):
+	for files in os.listdir(os.path.join(os.path.join(current_dir, folder_name), "efs")):
 		
 		if files.endswith('.json'):
 			file_name = files
 			break
 	
-	file = current_dir + "/" + folder_name + "/"
+	file = current_dir + "/" + folder_name + "/efs/"
 	if file_name:
 		file += file_name
 		data = json.loads(open(file, 'r+').read())

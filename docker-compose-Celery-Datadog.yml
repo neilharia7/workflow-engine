@@ -23,7 +23,6 @@ services:
             - postgres
             - redis
         environment:
-            - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=false
             - LOAD_EX=n
             - FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
             - EXECUTOR=Celery
@@ -68,7 +67,6 @@ services:
             # Uncomment to include custom plugins
             - ./plugins:/usr/local/airflow/plugins
         environment:
-            - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=false
             - LOAD_EX=n
             - FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
             - EXECUTOR=Celery
@@ -89,7 +87,6 @@ services:
             # Uncomment to include custom plugins
             - ./plugins:/usr/local/airflow/plugins
         environment:
-            - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=false
             - FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
             - EXECUTOR=Celery
             # - POSTGRES_USER=airflow
@@ -97,3 +94,25 @@ services:
             # - POSTGRES_DB=airflow
             # - REDIS_PASSWORD=redispass
         command: worker
+
+    datadog:
+        # user: airflow
+        image: datadog/agent:latest
+        container_name: datadog
+        ports:
+          - "8125:8125/udp"
+        links:
+            - webserver
+            - scheduler
+            - redis
+        environment:
+            - DD_API_KEY=e9177a684cfebc3a0be5583d03644da8
+            - DD_HOSTNAME=AIRFLOW-PROD
+            - DD_APM_ENABLED=true
+            - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
+            - DD_DOGSTATSD_ORIGIN_DETECTION=true
+            - DD_AC_INCLUDE="image:*"
+        volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - /proc/:/host/proc/:ro
+        - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
