@@ -27,34 +27,34 @@ def parses_to_integer(string):
 		return ""
 
 
-def create_request(request_structure, masala):
+def construct_json(json_structure, masala):
 	"""
 	
-	# spice it up and add fill to your request
+	# spice it up and add fill to your structure
 	
-	:param request_structure:
+	:param json_structure:
 	:param masala:
 	:return:
 	"""
 	
-	for key, value in request_structure.items():
+	for key, value in json_structure.items():
 		if isinstance(value, dict):
-			request_structure[key] = create_request(value, masala)
+			json_structure[key] = construct_json(value, masala)
 		elif isinstance(value, list):
-			request_structure[key] = []
+			json_structure[key] = []
 			for item in value:
 				try:
 					if isinstance(item, dict):
-						request_structure[key].append(create_request(item, masala))
+						json_structure[key].append(construct_json(item, masala))
 					else:
-						request_structure[key].append(masala[item] if item in masala else item)
+						json_structure[key].append(masala[item] if item in masala else item)
 				except Exception as e:
 					print("ignore: -> " + str(e))
 		else:
 			if value and value in masala:
-				request_structure[key] = masala[value] if parses_to_integer(masala[value]) else str(masala[value])
+				json_structure[key] = masala[value] if parses_to_integer(masala[value]) else str(masala[value])
 	
-	return request_structure
+	return json_structure
 
 
 # custom utility functions
@@ -107,6 +107,19 @@ def concat(**kwargs):
 		kwargs['ti'].xcom_push(key=key, value={key: transform})
 	
 	return task_info.get('child_task')[0]
+
+
+def update_nested_dict(data, key, value):
+	for k, v in data.items():
+		if key == k:
+			data[k] = eval(value)
+		elif isinstance(v, dict):
+			update_nested_dict(v, key, value)
+		elif isinstance(v, list):
+			for o in v:
+				if isinstance(o, dict):
+					update_nested_dict(o, key, value)
+	return data
 
 
 def logic_decoder(rules, data=None):
@@ -172,3 +185,4 @@ def logic_decoder(rules, data=None):
 	values = map(lambda val: logic_decoder(val, data), values)
 	
 	return operations[ops](*values)
+

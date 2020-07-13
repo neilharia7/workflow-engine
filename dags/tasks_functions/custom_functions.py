@@ -2,13 +2,11 @@ import json
 
 
 import requests
-from zeus.utils import create_request, logic_decoder
+from zeus.utils import logic_decoder, construct_json, update_nested_dict
 
 
 def customized_function(**kwargs):
 	"""
-	
-	# NOT TESTED
 	
 	# TODO maintain environment versions
 	
@@ -63,7 +61,7 @@ def customized_function(**kwargs):
 			print(e)
 			
 		# build request body
-		payload = create_request(request, complete_data)
+		payload = construct_json(request, complete_data)
 		
 		print("payload", payload)
 		if method == "GET":
@@ -160,8 +158,16 @@ def customized_function(**kwargs):
 			rule = queries[0].get('rule')
 			data = queries[0].get('data')
 			
-			data.update(complete_data)
+			# data.update(complete_data)
 			
+			print("data", data)
+			print("complete_data", complete_data)
+			for key, val in complete_data.items():
+				data = update_nested_dict(data, key, val)
+				data.update(data)
+						
+			data.update(complete_data)
+			print("data", data)
 			print("query", queries)
 			result = logic_decoder(rule, data)
 			print("res", result)
@@ -209,5 +215,6 @@ def customized_function(**kwargs):
 		return task_info.get('child_task')[0]
 	
 	
+
 
 
