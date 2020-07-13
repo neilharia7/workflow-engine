@@ -3,7 +3,6 @@ import json
 
 import requests
 from zeus.utils import *
-from ast import literal_eval
 
 
 def format_query(task_data, query):

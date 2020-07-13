@@ -1,6 +1,5 @@
 import json
 
-
 import requests
 from zeus.utils import logic_decoder, construct_json, update_nested_dict
 
@@ -36,14 +35,14 @@ def customized_function(**kwargs):
 			complete_data = complete_data[0]
 		
 		else:
-			temp = {}
+			temp_dict = dict()
 			
 			# assuming tuple of dict
 			for idx in range(len(complete_data)):
 				if isinstance(complete_data[idx], dict):
-					temp.update(complete_data[idx])
+					temp_dict.update(complete_data[idx])
 			
-			complete_data = temp
+			complete_data = temp_dict
 		
 		request = task_info.get('request', {})  # empty dict if no request in case of GET method
 		method = task_info.get('method')
@@ -59,7 +58,7 @@ def customized_function(**kwargs):
 				complete_data.update(user_input)
 		except Exception as e:
 			print(e)
-			
+		
 		# build request body
 		payload = construct_json(request, complete_data)
 		
@@ -92,7 +91,7 @@ def customized_function(**kwargs):
 					kwargs['ti'].xcom_push(key='response', value=json.loads(response.text))
 					
 					return resp_data.get('next_task')
-					
+				
 				except Exception as e:
 					print(e)
 					raise Exception(e)
@@ -134,7 +133,7 @@ def customized_function(**kwargs):
 				else:
 					print("unable to update")
 					print("val", complete_data[idx])
-
+			
 			complete_data = temp
 		
 		# get the rule(s)
@@ -164,7 +163,7 @@ def customized_function(**kwargs):
 			for key, val in complete_data.items():
 				data = update_nested_dict(data, key, val)
 				data.update(data)
-				
+			
 			data.update(complete_data)
 			print("data", data)
 			print("query", queries)
@@ -178,13 +177,13 @@ def customized_function(**kwargs):
 			if result:
 				# trigger subsequent task
 				return queries[0].get('result')
-				
+			
 			else:
 				print("res", queries[0]['result'])
 				child_tasks.remove(queries[0].get('result'))
 				# return another result
 				return child_tasks[0]
-			
+		
 		else:
 			for rule_info in queries:
 				
@@ -216,7 +215,7 @@ def customized_function(**kwargs):
 					result_task.append(rule_info.get('result'))
 			
 			return list(set(child_tasks) - set(result_task))[0]
-		
+	
 	elif task_info.get('type') in ["webhook_success", "webhook_reject"]:
 		return task_info.get('child_task')[0]
 

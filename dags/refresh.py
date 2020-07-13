@@ -4,6 +4,9 @@ import os
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.bash_operator import BashOperator
+from airflow.models import DagModel
+from airflow.operators.python_operator import PythonOperator
+from airflow.settings import Session
 
 default_args = {
 	'owner': 'me',
@@ -11,6 +14,13 @@ default_args = {
 	'retries': 1,
 	'retry_delay': dt.timedelta(seconds=60)
 }
+
+
+def test():
+	session = Session()
+	session.query(DagModel).update({DagModel.is_paused: True}, synchronize_session='fetch')
+	session.commit()
+
 
 folder_name = "dags"
 
@@ -25,10 +35,10 @@ start = DummyOperator(
 	dag=dag
 )
 
-refresher = BashOperator(
+refresher = PythonOperator(
 	task_id='refresh_workflows',
-	bash_command='python $file_path',
-	env={'file_path': os.path.join(os.path.join(os.path.join(os.getcwd(), "dags"), "scripts"), "unpause_dag.py")},
+	python_callable=test,
+	provide_context=True,
 	dag=dag
 )
 
@@ -38,4 +48,3 @@ end = DummyOperator(
 )
 
 start >> refresher >> end
-
