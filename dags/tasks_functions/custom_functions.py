@@ -160,17 +160,18 @@ def customized_function(**kwargs):
 			
 			# data.update(complete_data)
 			
-			print("data", data)
 			print("complete_data", complete_data)
 			for key, val in complete_data.items():
 				data = update_nested_dict(data, key, val)
 				data.update(data)
-						
+				
 			data.update(complete_data)
 			print("data", data)
 			print("query", queries)
 			result = logic_decoder(rule, data)
 			print("res", result)
+			
+			print("data", data)
 			
 			# save the data and proceed to subsequent task
 			kwargs['ti'].xcom_push(key='decision', value=data)
@@ -189,6 +190,11 @@ def customized_function(**kwargs):
 				
 				rule = rule_info.get('rule')
 				data = rule_info.get('data')
+				
+				print("complete_data", complete_data)
+				for key, val in complete_data.items():
+					data = update_nested_dict(data, key, val)
+					data.update(data)
 				
 				data.update(complete_data)
 				
@@ -213,8 +219,4 @@ def customized_function(**kwargs):
 		
 	elif task_info.get('type') in ["webhook_success", "webhook_reject"]:
 		return task_info.get('child_task')[0]
-	
-	
-
-
 

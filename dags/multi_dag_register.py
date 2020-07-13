@@ -5,7 +5,7 @@ import os
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import BranchPythonOperator, PythonOperator
-from tasks_functions.custom_functions import customized_function
+from tasks_functions.updated_custom_functions import customized_function
 from zeus.utils import *
 
 default_args = {

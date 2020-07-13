@@ -112,7 +112,7 @@ def concat(**kwargs):
 def update_nested_dict(data, key, value):
 	for k, v in data.items():
 		if key == k:
-			data[k] = eval(value)
+			data[k] = parses_to_integer(value)
 		elif isinstance(v, dict):
 			update_nested_dict(v, key, value)
 		elif isinstance(v, list):
