@@ -21,10 +21,11 @@ def parses_to_integer(string):
 	if string:
 		try:
 			return int(float(string))
-		except ValueError:
+		except Exception as e:
+			print(e)
 			return string
 	else:
-		return ""
+		return string  # bool, empty dict, list etc...
 
 
 def construct_json(json_structure, masala):

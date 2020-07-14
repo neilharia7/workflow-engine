@@ -15,6 +15,8 @@ def format_query(task_data, query):
 	
 	rule = query.get('rule')
 	data = query.get('data')
+	print("rule", rule)
+	print("data", data)
 	
 	for key, val in task_data.items():
 		data = update_nested_dict(data, key, val)
@@ -76,7 +78,6 @@ def customized_function(**kwargs):
 		
 		# pull data from parent task(s)
 		task_data = task_instance.xcom_pull(key=None, task_ids=parent_tasks)
-		print("task_data", task_data)
 		
 		if len(parent_tasks) == 1:
 			task_data = task_data[0]
@@ -89,6 +90,8 @@ def customized_function(**kwargs):
 					
 					temp_dict.update(task_data[index])
 			task_data = temp_dict
+		
+		print("task_data", task_data)
 		
 		request = task_info.get('request', {})  # empty dict if no request in case of GET method
 		method = task_info.get('method')
@@ -198,7 +201,7 @@ def customized_function(**kwargs):
 		
 		else:
 			for query in queries:
-				flag, data = format_query(task_data, queries[0])
+				flag, data = format_query(task_data, query)
 				
 				# save the data and proceed to subsequent task
 				kwargs['ti'].xcom_push(key='decision', value=data)
