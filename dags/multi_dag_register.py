@@ -166,10 +166,10 @@ if file_name:
 		dag_register = {
 			'owner': default_args.get('owner'),
 			'start_date': dt.datetime(2020, 6, 26),
-			'retries': dag_info.get('retries', default_args.get('retries')),
-			'retry_delay': dt.timedelta(seconds=30),
-			'max_retry_delay': dt.timedelta(seconds=dag_info.get('max_retry_delay', 3600)),
-			'retry_exponential_backoff': dag_info.get('exponential_retry', True)
+			'retries': dag_data.get('retries', default_args.get('retries')),
+			'retry_delay': dt.timedelta(seconds=dag_data.get('retry_delay', default_args.get('retry_delay'))),
+			'max_retry_delay': dt.timedelta(seconds=dag_data.get('max_retry_delay', 3600)),
+			'retry_exponential_backoff': dag_data.get('exponential_retry', True)
 		}
 		
 		with DAG(

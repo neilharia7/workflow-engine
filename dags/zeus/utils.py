@@ -186,4 +186,3 @@ def logic_decoder(rules, data=None):
 	values = map(lambda val: logic_decoder(val, data), values)
 	
 	return operations[ops](*values)
-
