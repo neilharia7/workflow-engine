@@ -1,8 +1,27 @@
 import json
 
-
 import requests
 from zeus.utils import *
+
+
+def request_formatter(request_json: dict) -> dict:
+	"""
+	format ->
+	
+	{
+		"key": {
+			"type": "<static / map  >",
+			"value": "<value>"
+	}
+	
+	
+	:param request_json:
+	:return:
+	"""
+	
+	for key, val in request_json.items():
+		request_json[key] = val.get('value')
+	return request_json
 
 
 def format_query(task_data, query):
@@ -66,14 +85,14 @@ def customized_function(**kwargs):
 					fields[key] = parses_to_integer(val)
 			
 			print("formatted from user", fields)
-			
+		
 		except Exception as e:
 			print("error", e)
 		
 		print("fields >> ", fields)
 		# save variables for future use
 		kwargs['ti'].xcom_push(key='start', value=fields)
-		
+	
 	elif task_info.get('type') == "api":  # transform_type, input & output keys will be empty
 		
 		# pull data from parent task(s)
@@ -87,7 +106,6 @@ def customized_function(**kwargs):
 			
 			for index in range(len(task_data)):
 				if isinstance(task_data[index], dict):
-					
 					temp_dict.update(task_data[index])
 			task_data = temp_dict
 		
@@ -113,7 +131,13 @@ def customized_function(**kwargs):
 		
 		except Exception as e:
 			print(e)
-			
+		
+		# format request
+		try:
+			request = request_formatter(request)
+		except Exception as e:
+			print(f"Request Format Exception -> {e}")
+		
 		# build request body
 		payload = construct_json(request, task_data)
 		print("payload", payload)
@@ -131,7 +155,7 @@ def customized_function(**kwargs):
 		
 		for status, resp_data in response_structure.items():
 			if response.status_code == int(status):
-	
+				
 				# check if all keys are present as expected in response
 				try:
 					
@@ -145,7 +169,7 @@ def customized_function(**kwargs):
 					print("response >> ", response.text)
 					kwargs['ti'].xcom_push(key='response', value=json.loads(response.text))
 					return resp_data.get('next_task')
-					
+				
 				except Exception as e:
 					print("Error >> ", e)
 					raise Exception(e)
@@ -168,10 +192,10 @@ def customized_function(**kwargs):
 					temp_dict.update(task_data[index])
 			
 			task_data = temp_dict
-			
+		
 		# get the defined logic
 		queries = task_info.get('query_logic')  # list
-
+		
 		# check if decision has multiple rules
 		# number of outputs will be (no of queries) + 1 (reject scenario)
 		
@@ -183,7 +207,7 @@ def customized_function(**kwargs):
 			child_tasks.remove(task_info.get('task_name'))
 		except Exception as e:
 			print("exception", e)
-			
+		
 		if len(queries) == 1:
 			
 			flag, data = format_query(task_data, queries[0])
@@ -211,7 +235,7 @@ def customized_function(**kwargs):
 					return query.get('result')
 				else:
 					result_task.append(query.get('result'))
-					
+			
 			return list(set(child_tasks) - set(result_task))[0]
 	
 	elif task_info.get('type') in ["webhook_success", "webhook_reject"]:
