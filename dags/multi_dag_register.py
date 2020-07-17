@@ -21,7 +21,7 @@ def datadog_event(title, text, dag_id, task_id):
 	hook.post_event(title=title, text=text, tags=tags)
 
 
-def datadog_event_success(context):
+def datadog_event_success(context, **kwargs):
 	dag_id = context['task_instance'].dag_id
 	task_id = context['task_instance'].task_id
 	text = f'Airflow DAG failure for {dag_id}\n\nDAG: {dag_id}\nTasks: {task_id}'
@@ -99,7 +99,7 @@ def create_dynamic_task(task_data: dict, __dag__):
 			dag=__dag__
 		)
 	
-	elif task_data['type'] in ["webhook_success"]:
+	elif task_data['type'] in ["webhook_success", "termination"]:
 		
 		return PythonOperator(
 			task_id=task_data.get('task_name'),

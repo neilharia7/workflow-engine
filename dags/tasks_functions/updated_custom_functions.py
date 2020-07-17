@@ -65,8 +65,24 @@ def customized_function(**kwargs):
 	task_instance = kwargs['ti']  # getting instance of task
 	
 	# get all the parents of this task
-	parent_tasks = task_info.get('parent_task', None)
+	parent_tasks = task_info.get('parent_task', str())
 	print("parent_task", parent_tasks)
+	
+	# pull data from parent task(s)
+	task_data = task_instance.xcom_pull(key=None, task_ids=parent_tasks)
+	
+	if len(parent_tasks) == 1:
+		task_data = task_data[0]
+	
+	else:
+		temp_dict = dict()
+		
+		for index in range(len(task_data)):
+			if isinstance(task_data[index], dict):
+				temp_dict.update(task_data[index])
+		task_data = temp_dict
+	
+	print("task_data", task_data)
 	
 	# type check
 	if task_info.get('type') == "start":
@@ -94,22 +110,6 @@ def customized_function(**kwargs):
 		kwargs['ti'].xcom_push(key='start', value=fields)
 	
 	elif task_info.get('type') == "api":  # transform_type, input & output keys will be empty
-		
-		# pull data from parent task(s)
-		task_data = task_instance.xcom_pull(key=None, task_ids=parent_tasks)
-		
-		if len(parent_tasks) == 1:
-			task_data = task_data[0]
-		
-		else:
-			temp_dict = dict()
-			
-			for index in range(len(task_data)):
-				if isinstance(task_data[index], dict):
-					temp_dict.update(task_data[index])
-			task_data = temp_dict
-		
-		print("task_data", task_data)
 		
 		request = task_info.get('request', {})  # empty dict if no request in case of GET method
 		method = task_info.get('method')
@@ -176,23 +176,6 @@ def customized_function(**kwargs):
 	
 	elif task_info.get('type') == "decision":
 		
-		# pull data from parent task(s)
-		task_data = task_instance.xcom_pull(key=None, task_ids=parent_tasks)
-		print("task_data", task_data)
-		
-		if len(parent_tasks) == 1:
-			task_data = task_data[0]
-		
-		else:
-			temp_dict = dict()
-			
-			# assuming tuple of dict
-			for index in range(len(task_data)):
-				if isinstance(task_data[index], dict):
-					temp_dict.update(task_data[index])
-			
-			task_data = temp_dict
-		
 		# get the defined logic
 		queries = task_info.get('query_logic')  # list
 		
@@ -239,4 +222,15 @@ def customized_function(**kwargs):
 			return list(set(child_tasks) - set(result_task))[0]
 	
 	elif task_info.get('type') in ["webhook_success", "webhook_reject"]:
+		return task_info.get('child_task')[0]
+	
+	elif task_info.get('type') == "termination":
+		
+		body = task_info.get('responsebody', dict())
+		url = task_info.get('url', '')
+		body.update(task_data)
+		
+		response = requests.post(url=url, json=body)
+		print("termination response", response)
+		
 		return task_info.get('child_task')[0]
