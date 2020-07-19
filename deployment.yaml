@@ -1,0 +1,471 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: redis
+  name: redis
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - image: redis:5.0.5
+        imagePullPolicy: IfNotPresent
+        name: redis
+        resources: {}
+      restartPolicy: Always
+  selector:
+    matchLabels:
+      app: redis
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: postgres
+  name: postgres
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - env:
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        - name: POSTGRES_DB
+          value: airflow
+        - name: POSTGRES_PASSWORD
+          value: airflow
+        - name: POSTGRES_USER
+          value: airflow
+        image: postgres:9.6
+        imagePullPolicy: IfNotPresent
+        name: postgres
+        resources: {}
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data/pgdata
+          name: postgres-claim0
+      restartPolicy: Always
+      volumes:
+      - name: postgres-claim0
+        persistentVolumeClaim:
+          claimName: postgres-claim0
+  selector:
+    matchLabels:
+      app: postgres
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: postgres-claim0
+  name: postgres-claim0
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: datadog
+  name: datadog
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: datadog
+    spec:
+      containers:
+      - env:
+        - name: DD_AC_INCLUDE
+          value: '"image:*"'
+        - name: DD_API_KEY
+          value: e9177a684cfebc3a0be5583d03644da8
+        - name: DD_APM_ENABLED
+          value: "true"
+        - name: DD_DOGSTATSD_NON_LOCAL_TRAFFIC
+          value: "true"
+        - name: DD_DOGSTATSD_ORIGIN_DETECTION
+          value: "true"
+        - name: DD_HEALTH_PORT
+          value: "8080"
+        - name: DD_HOSTNAME
+          value: AIRFLOW-DEV
+        - name: DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL
+          value: "true"
+        - name: DD_LOGS_CONFIG_USE_HTTP
+          value: "true"
+        - name: DD_LOGS_ENABLED
+          value: "true"
+        - name: DD_PROCESS_AGENT_ENABLED
+          value: "true"
+        image: datadog/agent:latest
+        imagePullPolicy: IfNotPresent
+        name: datadog
+        ports:
+        - containerPort: 8125
+          protocol: UDP
+        resources: {}
+        volumeMounts:
+        - mountPath: /var/run/docker.sock
+          name: datadog-claim0
+        - mountPath: /host/proc/
+          name: datadog-claim1
+          readOnly: true
+        - mountPath: /host/sys/fs/cgroup
+          name: datadog-claim2
+          readOnly: true
+      restartPolicy: Always
+      volumes:
+      - name: datadog-claim0
+        persistentVolumeClaim:
+          claimName: datadog-claim0
+      - name: datadog-claim1
+        persistentVolumeClaim:
+          claimName: datadog-claim1
+          readOnly: true
+      - name: datadog-claim2
+        persistentVolumeClaim:
+          claimName: datadog-claim2
+          readOnly: true
+  selector:
+    matchLabels:
+      app: datadog
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: datadog
+  name: datadog
+spec:
+  ports:
+  - name: "8125"
+    port: 8125
+    protocol: UDP
+    targetPort: 8125
+  selector:
+    app: datadog
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: datadog-claim0
+  name: datadog-claim0
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: datadog-claim1
+  name: datadog-claim1
+spec:
+  accessModes:
+  - ReadOnlyMany
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: datadog-claim2
+  name: datadog-claim2
+spec:
+  accessModes:
+  - ReadOnlyMany
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: scheduler
+  name: scheduler
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: scheduler
+    spec:
+      containers:
+      - args:
+        - scheduler
+        env:
+        - name: AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION
+          value: "false"
+        - name: AIRFLOW__SCHEDULER__STATSD_HOST
+          value: datadog
+        - name: AIRFLOW__SCHEDULER__STATSD_ON
+          value: "True"
+        - name: AIRFLOW__SCHEDULER__STATSD_PORT
+          value: "8125"
+        - name: AIRFLOW__SCHEDULER__STATSD_PREFIX
+          value: airflow
+        - name: EXECUTOR
+          value: Celery
+        - name: FERNET_KEY
+          value: 46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
+        - name: LOAD_EX
+          value: "n"
+        image: neilharia7/air:latest
+        imagePullPolicy: IfNotPresent
+        name: scheduler
+        resources: {}
+        volumeMounts:
+        - mountPath: /usr/local/airflow/dags
+          name: scheduler-claim0
+        - mountPath: /usr/local/airflow/plugins
+          name: scheduler-claim1
+      restartPolicy: Always
+      volumes:
+      - name: scheduler-claim0
+        persistentVolumeClaim:
+          claimName: scheduler-claim0
+      - name: scheduler-claim1
+        persistentVolumeClaim:
+          claimName: scheduler-claim1
+  selector:
+    matchLabels:
+      app: scheduler
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: scheduler-claim0
+  name: scheduler-claim0
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: scheduler-claim1
+  name: scheduler-claim1
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: webserver
+  name: webserver
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: webserver
+    spec:
+      containers:
+      - args:
+        - webserver
+        env:
+        - name: AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION
+          value: "false"
+        - name: AIRFLOW__SCHEDULER__STATSD_HOST
+          value: datadog
+        - name: AIRFLOW__SCHEDULER__STATSD_ON
+          value: "True"
+        - name: AIRFLOW__SCHEDULER__STATSD_PORT
+          value: "8125"
+        - name: AIRFLOW__SCHEDULER__STATSD_PREFIX
+          value: airflow
+        - name: EXECUTOR
+          value: Celery
+        - name: FERNET_KEY
+          value: 46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
+        - name: LOAD_EX
+          value: "n"
+        image: neilharia7/air:latest
+        imagePullPolicy: IfNotPresent
+        name: webserver
+        ports:
+        - containerPort: 8080
+        resources: {}
+        volumeMounts:
+        - mountPath: /usr/local/airflow/dags
+          name: webserver-claim0
+        - mountPath: /usr/local/airflow/plugins
+          name: webserver-claim1
+      restartPolicy: Always
+      volumes:
+      - name: webserver-claim0
+        persistentVolumeClaim:
+          claimName: webserver-claim0
+      - name: webserver-claim1
+        persistentVolumeClaim:
+          claimName: webserver-claim1
+  selector:
+    matchLabels:
+      app: webserver
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: webserver
+  name: webserver
+spec:
+  ports:
+  - name: "8080"
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: webserver
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: webserver-claim0
+  name: webserver-claim0
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: webserver-claim1
+  name: webserver-claim1
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: worker
+  name: worker
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+      - args:
+        - worker
+        env:
+        - name: AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION
+          value: "false"
+        - name: AIRFLOW__SCHEDULER__STATSD_HOST
+          value: datadog
+        - name: AIRFLOW__SCHEDULER__STATSD_ON
+          value: "True"
+        - name: AIRFLOW__SCHEDULER__STATSD_PORT
+          value: "8125"
+        - name: AIRFLOW__SCHEDULER__STATSD_PREFIX
+          value: airflow
+        - name: EXECUTOR
+          value: Celery
+        - name: FERNET_KEY
+          value: 46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
+        image: neilharia7/air:latest
+        imagePullPolicy: IfNotPresent
+        name: worker
+        resources: {}
+        volumeMounts:
+        - mountPath: /usr/local/airflow/dags
+          name: worker-claim0
+        - mountPath: /usr/local/airflow/plugins
+          name: worker-claim1
+      restartPolicy: Always
+      volumes:
+      - name: worker-claim0
+        persistentVolumeClaim:
+          claimName: worker-claim0
+      - name: worker-claim1
+        persistentVolumeClaim:
+          claimName: worker-claim1
+  selector:
+    matchLabels:
+      app: worker
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: worker-claim0
+  name: worker-claim0
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: worker-claim1
+  name: worker-claim1
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi

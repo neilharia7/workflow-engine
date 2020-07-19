@@ -1,13 +1,59 @@
 import json
 
 import requests
-from zeus.utils import logic_decoder, construct_json, update_nested_dict
+from zeus.utils import *
+import logging
+
+
+def request_formatter(request_json: dict) -> dict:
+	"""
+	format ->
+	
+	{
+		"key": {
+			"type": "<static / map  >",
+			"value": "<value>"
+	}
+	
+	
+	:param request_json:
+	:return:
+	"""
+	
+	for key, val in request_json.items():
+		request_json[key] = val.get('value')
+	return request_json
+
+
+def format_query(task_data, query):
+	"""
+	
+	:param task_data:
+	:param query:
+	:return:
+	"""
+	
+	rule = query.get('rule')
+	data = query.get('data')
+	# print("rule", rule)
+	# print("data", data)
+	
+	for key, val in task_data.items():
+		data = update_nested_dict(data, key, val)
+		data.update(data)
+	
+	print(data)
+	data.update(task_data)
+	
+	# print("formatted data", data)
+	
+	flag = logic_decoder(rule, data)
+	# print("result >> ", flag)
+	return flag, data
 
 
 def customized_function(**kwargs):
 	"""
-	
-	# TODO maintain environment versions
 	
 	:param kwargs:
 	:return:
@@ -15,54 +61,82 @@ def customized_function(**kwargs):
 	
 	# get all the task information
 	task_info = kwargs.get('templates_dict').get('task_info', None)
-	print("task_info")
-	print(task_info)
-	# check the type
-	if task_info.get('type') == "api":
-		task_instance = kwargs['ti']
-		# transform_type, input & output keys will be empty
+	logging.info(f"Task Information\n {task_info}")
+	
+	task_instance = kwargs['ti']  # getting instance of task
+	
+	# get all the parents of this task
+	parent_tasks = task_info.get('parent_task', str())
+	logging.info(f"Parent Tasks\n {parent_tasks}")
+	
+	# pull data from parent task(s)
+	task_data = task_instance.xcom_pull(key=None, task_ids=parent_tasks)
+	
+	if len(parent_tasks) == 1:
+		task_data = task_data[0]
+	
+	else:
+		temp_dict = dict()
 		
-		# get the total number of parents
-		parent_tasks = task_info.get('parent_task')
-		print("parent_task", parent_tasks)
+		for index in range(len(task_data)):
+			if isinstance(task_data[index], dict):
+				temp_dict.update(task_data[index])
+		task_data = temp_dict
+	
+	logging.info(f"Task Data\n {task_data}")
+	
+	# type check
+	if task_info.get('type') == "start":
+		# get fields to be pushed in xcom
+		fields = task_info.get('fields')  # dict mostly
 		
-		# pull data from parent task(s)
-		complete_data = task_instance.xcom_pull(key=None, task_ids=parent_tasks)
-		print("complete data")
-		print(complete_data)
-		
-		if len(parent_tasks) == 1:
-			complete_data = complete_data[0]
-		
-		else:
-			temp_dict = dict()
+		try:
+			# if passed through API, override
+			fields = kwargs['dag_run'].conf['request']['params']
 			
-			# assuming tuple of dict
-			for idx in range(len(complete_data)):
-				if isinstance(complete_data[idx], dict):
-					temp_dict.update(complete_data[idx])
+			# format key value type in input dict
+			for key, val in fields.items():
+				if val:
+					fields[key] = parses_to_integer(val)
 			
-			complete_data = temp_dict
+		except Exception as e:
+			logging.error(f"User Input Exception >> {e}")
+		
+		print("fields >> ", fields)
+		# save variables for future use
+		kwargs['ti'].xcom_push(key='start', value=fields)
+	
+	elif task_info.get('type') == "api":  # transform_type, input & output keys will be empty
 		
 		request = task_info.get('request', {})  # empty dict if no request in case of GET method
 		method = task_info.get('method')
 		url = task_info.get('url')
 		headers = task_info.get('headers')
 		
-		# will be removed
 		try:
 			# if passed through API, override
 			user_input = kwargs['dag_run'].conf['request']['params']
-			print("user input", user_input)
+			
+			logging.info(f'User Input {user_input}')
 			if isinstance(user_input, dict):
-				complete_data.update(user_input)
+				
+				# format key value type in input dict
+				for key, val in user_input.items():
+					user_input[key] = parses_to_integer(val)
+				
+				task_data.update(user_input)
+		
 		except Exception as e:
-			print(e)
+			logging.error(f'User Input Exception {e}')
+		
+		# format request
+		try:
+			request = request_formatter(request)
+		except Exception as e:
+			print(f"Request Format Exception -> {e}")
 		
 		# build request body
-		payload = construct_json(request, complete_data)
-		
-		print("payload", payload)
+		payload = construct_json(request, task_data)
 		if method == "GET":
 			response = requests.get(url=url, headers=headers)
 		else:
@@ -72,7 +146,7 @@ def customized_function(**kwargs):
 			else:  # json
 				response = requests.post(url=url, headers=headers, json=payload)
 		
-		print("response", response)
+		logging.info(f"response status >> {response}")
 		response_structure = task_info.get('response')
 		
 		for status, resp_data in response_structure.items():
@@ -81,62 +155,24 @@ def customized_function(**kwargs):
 				# check if all keys are present as expected in response
 				try:
 					
+					# future case
 					# if set(json.loads(response.text)) == set(resp_data):
 					# 	# save the response and proceed to subsequent task
 					# 	kwargs['ti'].xcom_push(key='response', value=json.loads(response.text))
 					
 					# no clue whether its response.text or response.json()
 					# TODO get clue
-					print(response.text)
+					print("response >> ", response.text)
 					kwargs['ti'].xcom_push(key='response', value=json.loads(response.text))
-					
 					return resp_data.get('next_task')
 				
 				except Exception as e:
-					print(e)
+					logging.error(f"Response Exception >> {e}")
 					raise Exception(e)
-	
-	elif task_info.get('type') == "start":
-		
-		# get fields to be pushed in xcom
-		fields = task_info.get('fields')  # dict mostly
-		
-		try:
-			# if passed through API, override
-			fields = kwargs['dag_run'].conf['request']['params']
-		except Exception as e:
-			print(e)
-		
-		# save variables for future use
-		kwargs['ti'].xcom_push(key='start', value=fields)
 	
 	elif task_info.get('type') == "decision":
 		
-		task_instance = kwargs['ti']
-		
-		# get the total number of parents
-		parent_tasks = task_info.get('parent_task')
-		
-		complete_data = task_instance.xcom_pull(key=None, task_ids=parent_tasks)
-		
-		if len(parent_tasks) == 1:
-			complete_data = complete_data[0]
-		
-		else:
-			temp = complete_data[0]  # dict hopefully
-			
-			# assuming tuple of dict
-			for idx in range(1, len(complete_data)):
-				
-				if isinstance(complete_data[idx], dict):
-					temp.update(complete_data[idx])
-				else:
-					print("unable to update")
-					print("val", complete_data[idx])
-			
-			complete_data = temp
-		
-		# get the rule(s)
+		# get the defined logic
 		queries = task_info.get('query_logic')  # list
 		
 		# check if decision has multiple rules
@@ -144,78 +180,52 @@ def customized_function(**kwargs):
 		
 		result_task = []
 		child_tasks = task_info.get('child_task')
-		print("child_task", child_tasks)
-		# temp test
+		
 		try:
 			child_tasks.remove(task_info.get('task_name'))
 		except Exception as e:
-			print("exception", e)
+			pass
 		
-		# TODO implement DRY (optimize)
-		if len(queries) == 1:  # outputs -> 2
+		if len(queries) == 1:
 			
-			rule = queries[0].get('rule')
-			data = queries[0].get('data')
-			
-			# data.update(complete_data)
-			
-			print("complete_data", complete_data)
-			for key, val in complete_data.items():
-				data = update_nested_dict(data, key, val)
-				data.update(data)
-			
-			data.update(complete_data)
-			print("data", data)
-			print("query", queries)
-			result = logic_decoder(rule, data)
-			print("res", result)
-			
-			print("data", data)
+			flag, data = format_query(task_data, queries[0])
 			
 			# save the data and proceed to subsequent task
 			kwargs['ti'].xcom_push(key='decision', value=data)
-			if result:
+			if flag:
 				# trigger subsequent task
 				return queries[0].get('result')
-			
 			else:
-				print("res", queries[0]['result'])
+				# print("trigger task >> ", queries[0]['result'])
 				child_tasks.remove(queries[0].get('result'))
 				# return another result
 				return child_tasks[0]
 		
 		else:
-			for rule_info in queries:
-				
-				rule = rule_info.get('rule')
-				data = rule_info.get('data')
-				
-				print("complete_data", complete_data)
-				for key, val in complete_data.items():
-					data = update_nested_dict(data, key, val)
-					data.update(data)
-				
-				data.update(complete_data)
-				
-				print("rule", rule)
-				print("data", data)
-				
-				print("res", logic_decoder(rule, data))
+			for query in queries:
+				flag, data = format_query(task_data, query)
 				
 				# save the data and proceed to subsequent task
 				kwargs['ti'].xcom_push(key='decision', value=data)
 				
-				if logic_decoder(rule, data):
-					print("data", data)
-					print("rule_info", rule_info)
-					
+				if flag:
 					# trigger subsequent task
-					return rule_info.get('result')
+					return query.get('result')
 				else:
-					result_task.append(rule_info.get('result'))
+					result_task.append(query.get('result'))
 			
 			return list(set(child_tasks) - set(result_task))[0]
 	
 	elif task_info.get('type') in ["webhook_success", "webhook_reject"]:
 		return task_info.get('child_task')[0]
-
+	
+	elif task_info.get('type') == "termination":
+		
+		body = task_info.get('responsebody', dict())
+		url = task_info.get('url', '')
+		body.update(task_data)
+		
+		response = requests.post(url=url, json=body)
+		# print("termination response", response)
+		
+		return task_info.get('child_task')[0]
