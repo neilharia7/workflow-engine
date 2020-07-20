@@ -68,7 +68,7 @@ def create_dynamic_task(task_data: dict, __dag__):
 			dag=__dag__
 		)
 	
-	if task_data['type'] in ['webhook_reject']:
+	if task_data['type'] in ['webhook_reject'] or task_data.get('task_name') == "error":
 		
 		return PythonOperator(
 			task_id=task_data.get('task_name'),
@@ -100,7 +100,7 @@ def create_dynamic_task(task_data: dict, __dag__):
 			dag=__dag__
 		)
 	
-	elif task_data['type'] in ["webhook_success", "termination"]:
+	elif task_data['type'] in ["webhook_success"] or task_data.get('task_name') == "success":
 		
 		return PythonOperator(
 			task_id=task_data.get('task_name'),
@@ -174,7 +174,7 @@ if file_name:
 		}
 		
 		with DAG(
-				dag_id=dag_data.get('dag_id'),
+				dag_id=dag_data.get('name'),
 				default_args=dag_register,
 				schedule_interval=None
 		) as dag:

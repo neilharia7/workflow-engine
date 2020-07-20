@@ -45,10 +45,10 @@ def format_query(task_data, query):
 	print(data)
 	data.update(task_data)
 	
-	# print("formatted data", data)
+	print("formatted data", data)
 	
 	flag = logic_decoder(rule, data)
-	# print("result >> ", flag)
+	print("result >> ", flag)
 	return flag, data
 
 
@@ -206,6 +206,7 @@ def customized_function(**kwargs):
 		
 		else:
 			for query in queries:
+				
 				flag, data = format_query(task_data, query)
 				
 				# save the data and proceed to subsequent task
@@ -230,16 +231,41 @@ def customized_function(**kwargs):
 		# map the status from previous task
 		status = task_data.get('status')
 		
+		try:
+			user_input = kwargs['dag_run'].conf['request']['params']
+			task_data.update(user_input)
+			
+		except Exception as e:
+			pass
+		
 		# remove redundant keys
+		cleanup = list()
+		
+		# adhoc code # TODO replace
+		for k, v in request_structure.items():
+			if isinstance(v, dict):
+				for k1, v1 in v.items():
+					v[k1] = v1.replace(k, '').strip('.')
+		
 		for key, val in request_structure.items():
 			if int(status) != int(key):
-				request_structure.pop(key)
+				cleanup.append(key)
+		for key in cleanup:
+			request_structure.pop(key)
+		
+		for key, val in request_structure.items():
+			request_structure['data'] = val
+			request_structure.pop(key)
+			break
 		
 		request_structure['run_id'] = kwargs['dag_run'].conf['run_id']
+		request_structure['status_code'] = task_data.get('status')
 		
-		data = flatten(task_data, '', dict(), '-')
+		data = flatten(task_data, '', dict())
 		
+		print('data', data)
 		payload = construct_json(request_structure, data)
+		print('payload', payload)
 		
 		response = requests.post(url=url, json=payload)
 		print("termination response", response)
