@@ -163,7 +163,10 @@ def customized_function(**kwargs):
 					# no clue whether its response.text or response.json()
 					# TODO get clue
 					print("response >> ", response.text)
-					kwargs['ti'].xcom_push(key='response', value=json.loads(response.text))
+					x_com_push_data = json.loads(response.text)
+					x_com_push_data['status'] = response.status_code
+					
+					kwargs['ti'].xcom_push(key='response', value=x_com_push_data)
 					return resp_data.get('next_task')
 				
 				except Exception as e:
@@ -220,12 +223,25 @@ def customized_function(**kwargs):
 		return task_info.get('child_task')[0]
 	
 	elif task_info.get('type') == "termination":
-		
-		body = task_info.get('responsebody', dict())
+		# get the body
+		request_structure = task_info.get('response', dict())
 		url = task_info.get('url', '')
-		body.update(task_data)
 		
-		response = requests.post(url=url, json=body)
-		# print("termination response", response)
+		# map the status from previous task
+		status = task_data.get('status')
+		
+		# remove redundant keys
+		for key, val in request_structure.items():
+			if int(status) != int(key):
+				request_structure.pop(key)
+		
+		request_structure['run_id'] = kwargs['dag_run'].conf['run_id']
+		
+		data = flatten(task_data, '', dict(), '-')
+		
+		payload = construct_json(request_structure, data)
+		
+		response = requests.post(url=url, json=payload)
+		print("termination response", response)
 		
 		return task_info.get('child_task')[0]

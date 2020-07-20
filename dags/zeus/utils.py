@@ -212,3 +212,27 @@ def logic_decoder(rules, data=None):
 	values = map(lambda val: logic_decoder(val, data), values)
 	
 	return operations[ops](*values)
+
+
+def flatten(initial, key, resultant: dict, seperator=None):
+	"""
+	caution:
+	does not help to flatten the curve
+	
+	:param initial:
+	:param key:
+	:param resultant:
+	:param seperator
+	:return:
+	"""
+	
+	if not seperator:
+		seperator = '.'
+	
+	if isinstance(initial, dict):
+		for k in initial:
+			n_key = f"{key}{seperator}{k}" if len(key) > 0 else k
+			flatten(initial[k], n_key, resultant, seperator)
+	else:
+		resultant[key] = initial
+	return resultant
