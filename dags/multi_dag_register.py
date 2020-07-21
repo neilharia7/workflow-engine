@@ -43,8 +43,6 @@ default_args = {
 	
 }
 # 'on_success_callback': datadog_event,
-
-
 # TODO update for custom level task retries
 def create_dynamic_task(task_data: dict, __dag__):
 	"""
@@ -215,3 +213,4 @@ if file_name:
 			
 			# dynamic dag registration
 			globals()[dag_data.get('dag_id')] = dag
+
