@@ -1,43 +1,43 @@
 import datetime as dt
 import json
-import logging
+# import logging
 import os
 
 from airflow import DAG
-from airflow.contrib.hooks.datadog_hook import DatadogHook
+# from airflow.contrib.hooks.datadog_hook import DatadogHook
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator
 
 folder_name = "dags"
 
 
-def datadog_event(title, text, dag_id, task_id):
-	hook = DatadogHook()
-	tags = [
-		f'dag:{dag_id}',
-		f'task:{task_id}',
-	]
-	
-	hook.post_event(title=title, text=text, tags=tags)
-
-
-def datadog_event_success(context):
-	dag_id = context['task_instance'].dag_id
-	task_id = context['task_instance'].task_id
-	text = f'Airflow DAG failure for {dag_id}\n\nDAG: {dag_id}\nTasks: {task_id}'
-	title = f'Airflow DAG success for {dag_id}'
-	
-	logging.info(title)
-	logging.info(text)
-	logging.info(dag_id)
-	logging.info(task_id)
-	
-	datadog_event(title, text, dag_id, task_id)
+# def datadog_event(title, text, dag_id, task_id):
+# 	hook = DatadogHook()
+# 	tags = [
+# 		f'dag:{dag_id}',
+# 		f'task:{task_id}',
+# 	]
+#
+# 	hook.post_event(title=title, text=text, tags=tags)
+#
+#
+# def datadog_event_success(context):
+# 	dag_id = context['task_instance'].dag_id
+# 	task_id = context['task_instance'].task_id
+# 	text = f'Airflow DAG failure for {dag_id}\n\nDAG: {dag_id}\nTasks: {task_id}'
+# 	title = f'Airflow DAG success for {dag_id}'
+#
+# 	logging.info(title)
+# 	logging.info(text)
+# 	logging.info(dag_id)
+# 	logging.info(task_id)
+#
+# 	datadog_event(title, text, dag_id, task_id)
 
 
 default_args = {
 	'owner': 'neilharia7',
-	'on_success_callback': datadog_event,
+	# 'on_success_callback': datadog_event,
 	'start_date': dt.datetime(2020, 6, 22),
 	'retries': 1,
 	'retry_delay': dt.timedelta(seconds=60)

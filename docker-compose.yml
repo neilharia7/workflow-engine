@@ -16,14 +16,14 @@ services:
       - ./pgdata:/var/lib/postgresql/data/pgdata:z
 
   initdb:
-    image: puckel/docker-airflow:latest
+    image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:1.0.0
     entrypoint: airflow initdb
     depends_on:
       - postgres
 
   webserver:
     user: airflow
-    image: puckel/docker-airflow:latest
+    image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:1.0.0
     restart: always
     depends_on:
       - postgres
@@ -56,7 +56,7 @@ services:
 
   flower:
     user: airflow
-    image: puckel/docker-airflow:latest
+    image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:1.0.0
     restart: always
     depends_on:
       - redis
@@ -69,7 +69,7 @@ services:
 
   scheduler:
     user: airflow
-    image: puckel/docker-airflow:latest
+    image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:1.0.0
     restart: always
     depends_on:
       - webserver
@@ -94,7 +94,7 @@ services:
 
   worker:
     user: airflow
-    image: puckel/docker-airflow:latest
+    image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:1.0.0
     restart: always
     depends_on:
       - scheduler
@@ -117,7 +117,6 @@ services:
     command: worker
 
   datadog:
-    # user: airflow
     image: datadog/agent:latest
     container_name: datadog
     ports:
@@ -138,7 +137,6 @@ services:
       - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
       - DD_DOGSTATSD_ORIGIN_DETECTION=true
       - DD_AC_INCLUDE="image:*"
-      - DD_HEALTH_PORT=8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /proc/:/host/proc/:ro
