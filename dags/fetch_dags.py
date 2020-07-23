@@ -1,11 +1,12 @@
 import datetime as dt
 import json
 
+import boto3
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator, BranchPythonOperator
 from tasks_functions.custom_functions import customized_function
-import boto3
+from zeus.utils import *
 
 default_args = {
 	'owner': 'neilharia7',
@@ -15,15 +16,12 @@ default_args = {
 	
 }
 
-
 # fetch Dags from s3 bucket
 s3_client = boto3.client('s3', region_name='ap-south-1')
 flag, dag_information = False, dict()
 try:
 	dag_information = json.loads(
-		s3_client.get_object(Bucket='flowxpert', Key='airflow_dag_registry/airflow_dags.json'))['Body'].read()
-	
-	print(f'dag data {dag_information}')
+		s3_client.get_object(Bucket='flowxpert', Key='airflow_dag_registry/airflow_dags.json')['Body'].read())
 	
 	if dag_information:
 		flag = True
@@ -52,7 +50,7 @@ def dynamic_task_creator(task_data: dict, __dag__: dict):
 			dag=__dag__
 		)
 	
-	elif task_data.get('type') == 'error':
+	elif task_data.get('type') == 'webhook_reject' or task_data.get('task_name') == 'error':
 		return PythonOperator(
 			task_id=task_data.get('task_name'),
 			provide_context=True,
@@ -67,7 +65,7 @@ def dynamic_task_creator(task_data: dict, __dag__: dict):
 			dag=__dag__
 		)
 	
-	elif task_data.get('type') in ['decision', 'api', 'success']:
+	elif task_data.get('type') in ['decision', 'api', 'webhook_success'] or task_data.get('task_name') == 'success':
 		
 		return BranchPythonOperator(
 			task_id=task_data.get('task_name'),
@@ -118,7 +116,7 @@ if flag:
 		}
 		
 		with DAG(
-				dag_id=dag_data.get('name'),
+				dag_id=dag_data.get('name', dag_data.get('dag_id')),
 				default_args=dag_registry,
 				schedule_interval=None
 		) as dag:
