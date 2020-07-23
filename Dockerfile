@@ -88,6 +88,4 @@ WORKDIR ${AIRFLOW_USER_HOME}
 
 ENTRYPOINT ["/entrypoint.sh"]
 
-# RUN chmod a+rw ./
-
 CMD ["webserver"]

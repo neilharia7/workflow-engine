@@ -53,20 +53,20 @@ if [ "$AIRFLOW__CORE__EXECUTOR" != "SequentialExecutor" ]; then
     : "${MYSQL_PASSWORD:="testadmin"}"
     : "${MYSQL_DB:="airflow"}"
     # Default values corresponding to the default compose files
-#    : "${POSTGRES_HOST:="postgres"}"
-#    : "${POSTGRES_PORT:="5432"}"
-#    : "${POSTGRES_USER:="airflow"}"
-#    : "${POSTGRES_PASSWORD:="airflow"}"
-#    : "${POSTGRES_DB:="airflow"}"
-#    : "${POSTGRES_EXTRAS:-""}"
+    #    : "${POSTGRES_HOST:="postgres"}"
+    #    : "${POSTGRES_PORT:="5432"}"
+    #    : "${POSTGRES_USER:="airflow"}"
+    #    : "${POSTGRES_PASSWORD:="airflow"}"
+    #    : "${POSTGRES_DB:="airflow"}"
+    #    : "${POSTGRES_EXTRAS:-""}"
 
-#    AIRFLOW__CORE__SQL_ALCHEMY_CONN="postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}${POSTGRES_EXTRAS}"
+    #    AIRFLOW__CORE__SQL_ALCHEMY_CONN="postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}${POSTGRES_EXTRAS}"
     AIRFLOW__CORE__SQL_ALCHEMY_CONN="mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DB}"
     export AIRFLOW__CORE__SQL_ALCHEMY_CONN
 
     # Check if the user has provided explicit Airflow configuration for the broker's connection to the database
     if [ "$AIRFLOW__CORE__EXECUTOR" = "CeleryExecutor" ]; then
-#      AIRFLOW__CELERY__RESULT_BACKEND="db+postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}${POSTGRES_EXTRAS}"
+      #      AIRFLOW__CELERY__RESULT_BACKEND="db+postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}${POSTGRES_EXTRAS}"
       AIRFLOW__CELERY__RESULT_BACKEND="db+mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DB}"
       export AIRFLOW__CELERY__RESULT_BACKEND
     fi
@@ -145,4 +145,3 @@ case "$1" in
     exec "$@"
     ;;
 esac
-
