@@ -172,7 +172,7 @@ if file_name:
 		}
 		
 		with DAG(
-				dag_id=dag_data.get('name'),
+				dag_id=dag_data.get('name', dag_data.get('dag_id')),
 				default_args=dag_register,
 				schedule_interval=None
 		) as dag:
@@ -198,10 +198,14 @@ if file_name:
 			# dynamic mapping
 			for child_idx, child_info in enumerate(reverse_dict['data']):
 				
+				print(f'child_idx {child_idx}\n child_info {child_info}')
 				if child_info.get('parent_task'):  # check if there are any parents of this task
 					for parent_idx, parent_info in enumerate(dag_data.get('data')):
 						
+						print(f'parent_idx {parent_idx}\n parent_info {parent_info}')
 						if parent_info.get('task_name') in child_info.get('parent_task'):
+							
+							print(f'child_idx {child_idx}\n task_len {task_len}')
 							task_register[child_idx] << task_register[task_len - parent_idx - 1]
 						
 						# connect the end node
@@ -213,4 +217,5 @@ if file_name:
 			
 			# dynamic dag registration
 			globals()[dag_data.get('dag_id')] = dag
+
 

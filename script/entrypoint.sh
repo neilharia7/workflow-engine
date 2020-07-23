@@ -46,20 +46,28 @@ wait_for_port() {
 if [ "$AIRFLOW__CORE__EXECUTOR" != "SequentialExecutor" ]; then
   # Check if the user has provided explicit Airflow configuration concerning the database
   if [ -z "$AIRFLOW__CORE__SQL_ALCHEMY_CONN" ]; then
-    # Default values corresponding to the default compose files
-    : "${POSTGRES_HOST:="postgres"}"
-    : "${POSTGRES_PORT:="5432"}"
-    : "${POSTGRES_USER:="airflow"}"
-    : "${POSTGRES_PASSWORD:="airflow"}"
-    : "${POSTGRES_DB:="airflow"}"
-    : "${POSTGRES_EXTRAS:-""}"
 
-    AIRFLOW__CORE__SQL_ALCHEMY_CONN="postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}${POSTGRES_EXTRAS}"
+    : "${MYSQL_HOST:="testserver.crhcifgoezvo.ap-south-1.rds.amazonaws.com"}"
+    : "${MYSQL_PORT:="3306"}"
+    : "${MYSQL_USER:="thinktest"}"
+    : "${MYSQL_PASSWORD:="testadmin"}"
+    : "${MYSQL_DB:="airflow"}"
+    # Default values corresponding to the default compose files
+#    : "${POSTGRES_HOST:="postgres"}"
+#    : "${POSTGRES_PORT:="5432"}"
+#    : "${POSTGRES_USER:="airflow"}"
+#    : "${POSTGRES_PASSWORD:="airflow"}"
+#    : "${POSTGRES_DB:="airflow"}"
+#    : "${POSTGRES_EXTRAS:-""}"
+
+#    AIRFLOW__CORE__SQL_ALCHEMY_CONN="postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}${POSTGRES_EXTRAS}"
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN="mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DB}"
     export AIRFLOW__CORE__SQL_ALCHEMY_CONN
 
     # Check if the user has provided explicit Airflow configuration for the broker's connection to the database
     if [ "$AIRFLOW__CORE__EXECUTOR" = "CeleryExecutor" ]; then
-      AIRFLOW__CELERY__RESULT_BACKEND="db+postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}${POSTGRES_EXTRAS}"
+#      AIRFLOW__CELERY__RESULT_BACKEND="db+postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}${POSTGRES_EXTRAS}"
+      AIRFLOW__CELERY__RESULT_BACKEND="db+mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DB}"
       export AIRFLOW__CELERY__RESULT_BACKEND
     fi
   else
@@ -69,12 +77,16 @@ if [ "$AIRFLOW__CORE__EXECUTOR" != "SequentialExecutor" ]; then
     fi
 
     # Derive useful variables from the AIRFLOW__ variables provided explicitly by the user
-    POSTGRES_ENDPOINT=$(echo -n "$AIRFLOW__CORE__SQL_ALCHEMY_CONN" | cut -d '/' -f3 | sed -e 's,.*@,,')
-    POSTGRES_HOST=$(echo -n "$POSTGRES_ENDPOINT" | cut -d ':' -f1)
-    POSTGRES_PORT=$(echo -n "$POSTGRES_ENDPOINT" | cut -d ':' -f2)
+    #    POSTGRES_ENDPOINT=$(echo -n "$AIRFLOW__CORE__SQL_ALCHEMY_CONN" | cut -d '/' -f3 | sed -e 's,.*@,,')
+    #    POSTGRES_HOST=$(echo -n "$POSTGRES_ENDPOINT" | cut -d ':' -f1)
+    #    POSTGRES_PORT=$(echo -n "$POSTGRES_ENDPOINT" | cut -d ':' -f2)
+    MYSQL_ENDPOINT=$(echo -n "$AIRFLOW__CORE__SQL_ALCHEMY_CONN" | cut -d '/' -f3 | sed -e 's,.*@,,')
+    MYSQL_HOST=$(echo -n "$MYSQL_ENDPOINT" | cut -d ':' -f1)
+    MYSQL_PORT=$(echo -n "$MYSQL_ENDPOINT" | cut -d ':' -f2)
   fi
 
-  wait_for_port "Postgres" "$POSTGRES_HOST" "$POSTGRES_PORT"
+    #  wait_for_port "Postgres" "$POSTGRES_HOST" "$POSTGRES_PORT"
+  wait_for_port "Postgres" "$MYSQL_HOST" "$MYSQL_PORT"
 fi
 
 # CeleryExecutor drives the need for a Celery broker, here Redis is used
@@ -100,8 +112,8 @@ if [ "$AIRFLOW__CORE__EXECUTOR" = "CeleryExecutor" ]; then
   else
     # Derive useful variables from the AIRFLOW__ variables provided explicitly by the user
     REDIS_ENDPOINT=$(echo -n "$AIRFLOW__CELERY__BROKER_URL" | cut -d '/' -f3 | sed -e 's,.*@,,')
-    REDIS_HOST=$(echo -n "$POSTGRES_ENDPOINT" | cut -d ':' -f1)
-    REDIS_PORT=$(echo -n "$POSTGRES_ENDPOINT" | cut -d ':' -f2)
+    REDIS_HOST=$(echo -n "$MYSQL_ENDPOINT" | cut -d ':' -f1)
+    REDIS_PORT=$(echo -n "$MYSQL_ENDPOINT" | cut -d ':' -f2)
   fi
 
   wait_for_port "Redis" "$REDIS_HOST" "$REDIS_PORT"
@@ -133,3 +145,4 @@ case "$1" in
     exec "$@"
     ;;
 esac
+

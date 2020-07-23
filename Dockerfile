@@ -17,7 +17,7 @@ ENV env="DEV"
 ARG AIRFLOW_VERSION=1.10.10
 ARG AIRFLOW_USER_HOME=/usr/local/airflow
 ARG AIRFLOW_DEPS=""
-ARG PYTHON_DEPS="datadog, boto3"
+ARG PYTHON_DEPS="boto3 pymysql"
 ENV AIRFLOW_HOME=${AIRFLOW_USER_HOME}
 ENV AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=false
 # Define en_US.
@@ -61,7 +61,7 @@ RUN set -ex \
     && pip install pyOpenSSL \
     && pip install ndg-httpsclient \
     && pip install pyasn1 \
-    && pip install apache-airflow[crypto,celery,postgres,ssh,statsd${AIRFLOW_DEPS:+,}${AIRFLOW_DEPS}]==${AIRFLOW_VERSION} \
+    && pip install apache-airflow[crypto,celery,postgres,mysql,ssh,statsd${AIRFLOW_DEPS:+,}${AIRFLOW_DEPS}]==${AIRFLOW_VERSION} \
     && pip install 'redis==3.2' \
     && pip install airflow-code-editor \
     && if [ -n "${PYTHON_DEPS}" ]; then pip install ${PYTHON_DEPS}; fi \
@@ -79,7 +79,7 @@ RUN set -ex \
 COPY script/entrypoint.sh /entrypoint.sh
 COPY config/airflow.cfg ${AIRFLOW_USER_HOME}/airflow.cfg
 
-RUN chown -R airflow: ${AIRFLOW_USER_HOME}
+RUN chown -R airflow: ${AIRFLOW_USER_HOME} && chmod +x /entrypoint.sh
 
 EXPOSE 8080 5555 8793
 
@@ -88,6 +88,6 @@ WORKDIR ${AIRFLOW_USER_HOME}
 
 ENTRYPOINT ["/entrypoint.sh"]
 
-RUN chmod a+rw ./
+# RUN chmod a+rw ./
 
 CMD ["webserver"]

@@ -22,7 +22,7 @@ flag, dag_information = False, dict()
 try:
 	dag_information = json.loads(
 		s3_client.get_object(Bucket='flowxpert', Key='airflow_dag_registry/airflow_dags.json')['Body'].read())
-	
+	print('dag fetch complete')
 	if dag_information:
 		flag = True
 except Exception as e:
@@ -127,16 +127,16 @@ if flag:
 			task_register = [dynamic_task_creator(task_data, dag) for task_data in data_list]
 			reverse_dict = {"data": data_list}
 			
-			no_of_tasks = len(task_register)
+			task_len = len(task_register)
 			
 			# dynamic mapping
-			for child_idx, child_info in enumerate(reverse_dict.get('data')):
-				
+			for child_idx, child_info in enumerate(reverse_dict['data']):
 				if child_info.get('parent_task'):  # check if there are any parents of this task
 					for parent_idx, parent_info in enumerate(dag_data.get('data')):
 						
 						if parent_info.get('task_name') in child_info.get('parent_task'):
-							task_register[child_idx] << task_register[no_of_tasks - parent_idx - 1]
-							
+							task_register[child_idx] << task_register[task_len - parent_idx - 1]
+									
 			# dynamic dag registration
 			globals()[dag_data.get('dag_id')] = dag
+
