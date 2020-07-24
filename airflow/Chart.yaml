@@ -1,0 +1,10 @@
+apiVersion: v1
+name: airflow
+description: Airflow with CeleryExecutor
+version: 1.0.0
+appVersion: ''
+maintainers:
+  - name: Neil Haria
+    email: neilharia007@gmail.com
+sources:
+  - https://usr/local/airflow.apache.org/
