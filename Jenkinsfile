@@ -7,7 +7,6 @@ pipeline {
         ECR = "740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine"
     }
 
-
     stages {
 
         stage("Building Image") {

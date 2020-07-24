@@ -1,0 +1,16 @@
+pytz
+pyOpenSSL
+requests
+pyOpenSSL
+ndg-httpsclient
+pyasn1
+pymysql
+celery
+flower
+apache-airflow
+redis
+kubernetes
+Flask-WTF==0.14
+click
+statsd
+boto3
