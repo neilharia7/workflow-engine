@@ -54,3 +54,28 @@ spec:
   clusterIP: None
   selector:
     app: {{ template "airflow.name" . }}-worker
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "airflow.fullname" . }}-rabbitmq
+  labels:
+    app: {{ template "airflow.name" . }}-rabbitmq
+    chart: {{ template "airflow.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  ports:
+    - name: epmd
+      protocol: TCP
+      port: 4369
+      targetPort: 4369
+    - name: amqp
+      protocol: TCP
+      port: 5672
+      targetPort: 56672
+    - name: http
+      protocol: TCP
+      port: 15672
+      targetPort: 15672

@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "airflow.fullname" . }}-rabbitmq
+  labels:
+    app: {{ template "airflow.name" . }}-rabbitmq
+    chart: {{ template "airflow.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ template "airflow.name" . }}-rabbitmq
+        release: {{ .Release.Name }}
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: {{ .Chart.Name }}-rabbitmq
+          image: rabbitmq:3.8.5-alpine
+          imagePullPolicy: {{ .Values.airflow.image_pull_policy }}
+          env:
+            {{- range $setting, $option := .Values.rabbitmq.config }}
+            - name: {{ $setting }}
+              value: {{ $option }}
+            {{- end }}
+          ports:
+            - name: epmd
+              protocol: TCP
+              containerPort: 4369
+            - name: amqp
+              protocol: TCP
+              containerPort: 5672
+            - name: http
+              protocol: TCP
+              containerPort: 15672
+          livenessProbe:
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - 'timeout 5 wget -O - -q --header "Authorization: Basic `echo -n \"airflow:airflow\" | base64`" http://127.0.0.1:15672/api/healthchecks/node | grep -qF "{\"status\":\"ok\"}"'
+  selector:
+    matchLabels:
+      app: {{ template "airflow.name" . }}-rabbitmq

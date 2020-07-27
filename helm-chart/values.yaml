@@ -205,6 +205,7 @@ redis:
     enabled: true
 
 rabbitmq:
+  replicas: 3
   service:
     type: ClusterIP
   node:
@@ -213,4 +214,7 @@ rabbitmq:
   management:
     port: 15672
     targetPort: management
-
+  config:
+    RABBITMQ_DEFAULT_USER: airflow
+    RABBITMQ_DEFAULT_PASS: airflow
+    RABBITMQ_DEFAULT_VHOST: airflow
