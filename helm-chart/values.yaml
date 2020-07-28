@@ -218,3 +218,7 @@ rabbitmq:
     RABBITMQ_DEFAULT_USER: airflow
     RABBITMQ_DEFAULT_PASS: airflow
     RABBITMQ_DEFAULT_VHOST: airflow
+
+webserver:
+  readinessProbe:
+    initialDelaySeconds: 20

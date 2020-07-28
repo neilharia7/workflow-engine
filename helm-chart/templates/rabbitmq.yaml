@@ -18,7 +18,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: {{ .Chart.Name }}-rabbitmq
-          image: rabbitmq:3.8.5-alpine
+          image: rabbitmq:3-management
           imagePullPolicy: {{ .Values.airflow.image_pull_policy }}
           env:
             {{- range $setting, $option := .Values.rabbitmq.config }}
@@ -26,17 +26,12 @@ spec:
               value: {{ $option }}
             {{- end }}
           ports:
-            - name: epmd
-              protocol: TCP
-              containerPort: 4369
-            - name: amqp
-              protocol: TCP
+            - name: node
               containerPort: 5672
-            - name: http
-              protocol: TCP
+            - name: management
               containerPort: 15672
           livenessProbe:
-            initialDelaySeconds: 120
+            initialDelaySeconds: 20
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 5

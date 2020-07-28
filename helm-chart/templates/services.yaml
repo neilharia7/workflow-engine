@@ -67,15 +67,11 @@ metadata:
     heritage: {{ .Release.Service }}
 spec:
   ports:
-    - name: epmd
-      protocol: TCP
-      port: 4369
-      targetPort: 4369
-    - name: amqp
+    - name: node
       protocol: TCP
       port: 5672
-      targetPort: 56672
-    - name: http
+      targetPort: node
+    - name: management
       protocol: TCP
       port: 15672
-      targetPort: 15672
+      targetPort: management

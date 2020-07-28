@@ -14,7 +14,7 @@ spec:
   serviceName: "{{ template "airflow.fullname" . }}-workers"
   selector:
     matchLabels:
-      app: {{ template "airflow.fullname" . }}-web
+      app: {{ template "airflow.fullname" . }}-worker
   updateStrategy:
     type: RollingUpdate
   # Use experimental burst mode for faster StatefulSet scaling

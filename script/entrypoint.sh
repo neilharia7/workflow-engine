@@ -52,6 +52,7 @@ if [[ "$1" = "webserver" ]] || [[ "$1" = "worker" ]] || [[ "$1" = "scheduler" ]]
       exit 1
     fi
     echo "$(date) - waiting for RabbitMQ... $j/$TRY_LOOP"
+    echo "curl -sI -u ${RABBITMQ_CREDS} http://${RABBITMQ_HOST}:${RABBITMQ_MANAGEMENT_PORT}/api/whoami |grep '200 OK'"
     sleep 5
   done
 fi

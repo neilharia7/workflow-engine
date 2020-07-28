@@ -17,10 +17,11 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ template "airflow.name" . }}-web
+        app:  {{ template "airflow.name" . }}-web
         release: {{ .Release.Name }}
     spec:
       restartPolicy: Always
+      terminationGracePeriodSeconds: 10
       containers:
         - name: {{ .Chart.Name }}-web
           image: {{ .Values.airflow.image }}:{{ .Values.airflow.imageTag }}
