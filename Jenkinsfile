@@ -26,12 +26,14 @@ pipeline {
         }
 
         stage("Push Image to ECR") {
-            script {
-					sh """docker tag $IMAGE $ECR:$VERSION
-						docker tag $IMAGE $ECR:latest
-						docker push $ECR:latest
-						docker push $ECR:$VERSION"""
-				}
+            steps {
+	            script {
+						sh """docker tag $IMAGE $ECR:$VERSION
+							docker tag $IMAGE $ECR:latest
+							docker push $ECR:latest
+							docker push $ECR:$VERSION"""
+					}
+			}
 
         }
     }
