@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        VERSION = sh(returnStdout: true,script: 'git tag --contains').trim()
+        VERSION = sh(returnStdout: true,script: 'git tag --sort=-creatordate | head -n 1').trim()
         IMAGE = "airflow:latest"
         ECR = "740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine"
     }
