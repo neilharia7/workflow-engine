@@ -2,12 +2,19 @@ pipeline {
     agent any
 
     environment {
-        VERSION = sh(returnStdout: true,script: 'git tag --sort=-creatordate | head -n 1').trim()
+        VERSION = sh(returnStdout: true, script: "git tag --sort version:refname | tail -1").trim()
         IMAGE = "airflow:latest"
         ECR = "740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine"
     }
 
     stages {
+
+        stage("Get Build Version")
+            steps {
+                script {
+                    echo "Building Version >> $VERSION"
+                }
+            }
 
         stage("Building Image") {
             steps {
@@ -28,10 +35,10 @@ pipeline {
         stage("Push Image to ECR") {
             steps {
 	            script {
-						sh """docker tag $IMAGE $ECR:$VERSION
-							docker tag $IMAGE $ECR:latest
-							docker push $ECR:latest
-							docker push $ECR:$VERSION"""
+                    sh """docker tag $IMAGE $ECR:$VERSION
+                        docker tag $IMAGE $ECR:latest
+                        docker push $ECR:latest
+                        docker push $ECR:$VERSION"""
 					}
 			}
 
