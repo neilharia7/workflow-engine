@@ -11,9 +11,7 @@ pipeline {
 
         stage("Get Build Version") {
             steps {
-                script {
-                    echo "Building Version >> $VERSION"
-                }
+                echo "Building Version >> $VERSION"
             }
         }
 
