@@ -9,12 +9,13 @@ pipeline {
 
     stages {
 
-        stage("Get Build Version")
+        stage("Get Build Version") {
             steps {
                 script {
                     echo "Building Version >> $VERSION"
                 }
             }
+        }
 
         stage("Building Image") {
             steps {
