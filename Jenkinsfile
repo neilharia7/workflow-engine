@@ -11,7 +11,12 @@ pipeline {
 
         stage("Get Build Version") {
             steps {
-                echo "Building Version >> $VERSION"
+                script {
+                    tag = sh(returnStdout: true, script: "git tag --sort version:refname | tail -1").trim()
+                    env.BUILD_VERSION = tag
+                    echo "env-BUILD_VERSION"
+                    echo "${env.BUILD_VERSION}"
+                }
             }
         }
 
