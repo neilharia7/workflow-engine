@@ -52,6 +52,9 @@ COPY    ./dags ${AIRFLOW_HOME}/dags
 COPY    script/entrypoint.sh ${AIRFLOW_HOME}/entrypoint.sh
 COPY    config/airflow.cfg ${AIRFLOW_HOME}/airflow.cfg
 
+RUN     mkdir ${AIRFLOW_HOME}/plugins
+ADD 	./plugins ${AIRFLOW_HOME}/plugins
+
 RUN     chown -R airflow: ${AIRFLOW_HOME} \
         &&  chmod +x ${AIRFLOW_HOME}/entrypoint.sh
 

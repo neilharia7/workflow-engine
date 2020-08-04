@@ -49,12 +49,48 @@ spec:
       targetPort: flower
       nodePort: 32081
 ---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: rabbitmq
+spec:
+  maxReplicas: 5
+  minReplicas: 1
+  scaleTargetRef:
+    kind: Deployment
+    name: rabbitmq
+    apiVersion: apps/v1
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: worker
+spec:
+  maxReplicas: 10
+  minReplicas: 2
+  scaleTargetRef:
+    kind: Deployment
+    name: worker
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: rabbitmq
 spec:
-  replicas: 1
   template:
     metadata:
       labels:
@@ -92,6 +128,11 @@ metadata:
   name: web
 spec:
   replicas: 1
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
   template:
     metadata:
       labels:
@@ -100,22 +141,38 @@ spec:
     spec:
       restartPolicy: Always
       containers:
-      - name: web
-        image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:test
-        imagePullPolicy: Always
-        env:
-        - name: AIRFLOW_HOME
-          value: "/usr/local/airflow"
-        ports:
         - name: web
-          containerPort: 8080
-        args: ["webserver"]
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 8080
-          initialDelaySeconds: 240
-          periodSeconds: 30
+          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:latest
+          imagePullPolicy: Always
+          env:
+            - name: AIRFLOW_HOME
+              value: "/usr/local/airflow"
+          ports:
+            - name: web
+              containerPort: 8080
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 200m
+              memory: 256Mi
+          args: ["webserver"]
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            failureThreshold: 20
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              port: 8080
+              path: /health
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+            failureThreshold: 20
+            periodSeconds: 5
       imagePullSecrets:
         - name: ap-south-1-ecr-registry
   selector:
@@ -127,7 +184,11 @@ kind: Deployment
 metadata:
   name: flower
 spec:
-  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
   template:
     metadata:
       labels:
@@ -136,19 +197,19 @@ spec:
     spec:
       restartPolicy: Always
       containers:
-      - name: flower
-        image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:test
-        imagePullPolicy: Always
-        env:
-        - name: AIRFLOW_HOME
-          value: "/usr/local/airflow"
-        # To prevent the error: ValueError: invalid literal for int() with base 10: 'tcp://10.0.0.83:5555'
-        - name: FLOWER_PORT
-          value: "5555"
-        ports:
         - name: flower
-          containerPort: 5555
-        args: ["flower"]
+          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:latest
+          imagePullPolicy: Always
+          env:
+            - name: AIRFLOW_HOME
+              value: "/usr/local/airflow"
+            # To prevent the error: ValueError: invalid literal for int() with base 10: 'tcp://10.0.0.83:5555'
+            - name: FLOWER_PORT
+              value: "5555"
+          ports:
+            - name: flower
+              containerPort: 5555
+          args: ["flower"]
       imagePullSecrets:
         - name: ap-south-1-ecr-registry
   selector:
@@ -161,54 +222,80 @@ metadata:
   name: scheduler
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
-        app: airflow
+        app: scheduler
         tier: scheduler
     spec:
       restartPolicy: Always
+      terminationGracePeriodSeconds: 10
       containers:
-      - name: scheduler
-        image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:test
-        imagePullPolicy: Always
-        # volumes:
-        #     - /localpath/to/dags:/usr/local/airflow/dags
-        env:
-        - name: AIRFLOW_HOME
-          value: "/usr/local/airflow"
-        args: ["scheduler"]
+        - name: scheduler
+          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:latest
+          imagePullPolicy: Always
+          # volumes:
+          #     - /localpath/to/dags:/usr/local/airflow/dags
+          env:
+            - name: AIRFLOW_HOME
+              value: "/usr/local/airflow"
+          readinessProbe:
+           initialDelaySeconds: 10
+           timeoutSeconds: 10
+           failureThreshold: 20
+           periodSeconds: 30
+           exec:
+             command:
+               - /usr/bin/env
+               - AIRFLOW__CORE__LOGGING_LEVEL=ERROR
+               - python3
+               - -Wignore
+               - -c
+               - |
+                 from airflow.jobs.scheduler_job import SchedulerJob
+                 from airflow.utils.db import create_session
+                 from airflow.utils.net import get_hostname
+                 import sys
+                 with create_session() as session:
+                   job = session.query(SchedulerJob).filter_by(hostname=get_hostname()).order_by(SchedulerJob.latest_heartbeat.desc()).limit(1).first()
+                 sys.exit(0 if job.is_alive() else 1)
+          args: ["scheduler"]
       imagePullSecrets:
         - name: ap-south-1-ecr-registry
   selector:
     matchLabels:
-      app: airflow
+      app: scheduler
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: worker
 spec:
-  replicas: 3
   template:
     metadata:
       labels:
-        app: airflow
+        app: worker
         tier: worker
     spec:
       restartPolicy: Always
+      terminationGracePeriodSeconds: 10
       containers:
-      - name: worker
-        image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:test
-        imagePullPolicy: Always
-        # volumes:
-        #     - /localpath/to/dags:/usr/local/airflow/dags
-        env:
-        - name: AIRFLOW_HOME
-          value: "/usr/local/airflow"
-        args: ["worker"]
+        - name: worker
+          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:latest
+          imagePullPolicy: Always
+          # volumes:
+          #     - /localpath/to/dags:/usr/local/airflow/dags
+          env:
+            - name: AIRFLOW_HOME
+              value: "/usr/local/airflow"
+          args: ["worker"]
       imagePullSecrets:
         - name: ap-south-1-ecr-registry
   selector:
     matchLabels:
-      app: airflow
+      app: worker
