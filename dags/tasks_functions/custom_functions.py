@@ -1,21 +1,21 @@
 import json
+import logging
 
 import requests
 from zeus.utils import *
-import logging
 
 
 def request_formatter(request_json: dict) -> dict:
 	"""
 	format ->
-	
+
 	{
 		"key": {
 			"type": "<static / map  >",
 			"value": "<value>"
 	}
-	
-	
+
+
 	:param request_json:
 	:return:
 	"""
@@ -27,7 +27,7 @@ def request_formatter(request_json: dict) -> dict:
 
 def format_query(task_data, query):
 	"""
-	
+
 	:param task_data:
 	:param query:
 	:return:
@@ -54,7 +54,7 @@ def format_query(task_data, query):
 
 def customized_function(**kwargs):
 	"""
-	
+
 	:param kwargs:
 	:return:
 	"""
@@ -98,7 +98,7 @@ def customized_function(**kwargs):
 			for key, val in fields.items():
 				if val:
 					fields[key] = parses_to_integer(val)
-			
+		
 		except Exception as e:
 			logging.error(f"User Input Exception >> {e}")
 		
@@ -125,6 +125,7 @@ def customized_function(**kwargs):
 					user_input[key] = parses_to_integer(val)
 				
 				task_data.update(user_input)
+				print(f'task_data\n{task_data}')
 		
 		except Exception as e:
 			logging.error(f'User Input Exception {e}')
@@ -137,6 +138,7 @@ def customized_function(**kwargs):
 		
 		# build request body
 		payload = construct_json(request, task_data)
+		print(f'payload\n{payload}')
 		if method == "GET":
 			response = requests.get(url=url, headers=headers)
 		else:
@@ -164,6 +166,8 @@ def customized_function(**kwargs):
 					# TODO get clue
 					print("response >> ", response.text)
 					x_com_push_data = json.loads(response.text)
+					x_com_push_data.update(task_data)
+					print(f"xCom >> {x_com_push_data}")
 					x_com_push_data['status'] = response.status_code
 					
 					kwargs['ti'].xcom_push(key='response', value=x_com_push_data)
@@ -205,19 +209,22 @@ def customized_function(**kwargs):
 				return child_tasks[0]
 		
 		else:
+			x_com_push_data = task_data
 			for query in queries:
 				
 				flag, data = format_query(task_data, query)
 				
 				# save the data and proceed to subsequent task
-				kwargs['ti'].xcom_push(key='decision', value=data)
+				x_com_push_data.update(data)
 				
 				if flag:
+					kwargs['ti'].xcom_push(key='decision', value=x_com_push_data)
 					# trigger subsequent task
 					return query.get('result')
 				else:
 					result_task.append(query.get('result'))
 			
+			kwargs['ti'].xcom_push(key='decision', value=x_com_push_data)
 			return list(set(child_tasks) - set(result_task))[0]
 	
 	elif task_info.get('type') in ["webhook_success", "webhook_reject"]:
@@ -234,7 +241,7 @@ def customized_function(**kwargs):
 		try:
 			user_input = kwargs['dag_run'].conf['request']['params']
 			task_data.update(user_input)
-			
+		
 		except Exception as e:
 			pass
 		
@@ -270,4 +277,12 @@ def customized_function(**kwargs):
 		response = requests.post(url=url, json=payload)
 		print("termination response", response)
 		
+		return task_info.get('child_task')[0]
+	
+	elif task_info.get('task_name') in ['success', 'error']:
+		
+		url = task_info.get('url', '')
+		headers = task_info.get('headers', {"Content-Type": "application/json"})
+		
+		# response = requests.post(url=url, headers=headers)
 		return task_info.get('child_task')[0]

@@ -7,15 +7,18 @@ images:
   airflow:
     # base reposiotry for webserver/scheduler/workers
     repository: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine
-    imageTag: test
+    imageTag: latest
     # Always or IfNotPresent
     pullPolicy: IfNotPresent
 
   flower:
     repository: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine
-      imageTag: test
+      imageTag: latest
       # Always or IfNotPresent
       pullPolicy: IfNotPresent
+
+  rabbitmq:
+    reposiory:
 
 # Enable RBAC (default on most clusters these days)
 rbacEnabled: true
@@ -70,7 +73,7 @@ celery:
   num_workers: 5
   port: 5555
   service:
-    type: NodePort
+    type: ClusterIP
 
 ingress:
   # enable ingress
