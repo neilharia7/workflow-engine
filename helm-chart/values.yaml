@@ -13,10 +13,9 @@ images:
 
   flower:
     repository: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine
-      imageTag: latest
-      # Always or IfNotPresent
-      pullPolicy: IfNotPresent
-
+    imageTag: latest
+    # Always or IfNotPresent
+    pullPolicy: IfNotPresent
   rabbitmq:
     reposiory:
 

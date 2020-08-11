@@ -1,0 +1,315 @@
+NAME: helm-chart-1597062494
+LAST DEPLOYED: Mon Aug 10 17:58:16 2020
+NAMESPACE: default
+STATUS: pending-install
+REVISION: 1
+TEST SUITE: None
+HOOKS:
+MANIFEST:
+---
+# Source: helm-chart/templates/services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: helm-chart-1597062494-helm-chart-web
+  labels:
+    app: helm-chart-web
+    chart: helm-chart-1.0.0
+    release: helm-chart-1597062494
+    heritage: Helm
+spec:
+  type: ClusterIP
+  selector:
+    app: helm-chart-web
+    release: helm-chart-1597062494
+  ports:
+    - name: web
+      protocol: TCP
+      port: 8080
+---
+# Source: helm-chart/templates/services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: helm-chart-1597062494-helm-chart-flower
+  labels:
+    app: helm-chart-flower
+    chart: helm-chart-1.0.0
+    release: helm-chart-1597062494
+    heritage: Helm
+spec:
+  type: NodePort
+  selector:
+    app: helm-chart-flower
+    release: helm-chart-1597062494
+  ports:
+    - name: flower
+      protocol: TCP
+      port: 5555
+---
+# Source: helm-chart/templates/services.yaml
+# Headless service for stable DNS entries of StatefulSet members.
+apiVersion: v1
+kind: Service
+metadata:
+  name: helm-chart-1597062494-helm-chart-worker
+  labels:
+    app: helm-chart-worker
+    chart: helm-chart-1.0.0
+    release: helm-chart-1597062494
+    heritage: Helm
+spec:
+  ports:
+    - name: worker
+      protocol: TCP
+      port: 8793
+  clusterIP: None
+  selector:
+    app: helm-chart-worker
+---
+# Source: helm-chart/templates/services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: helm-chart-1597062494-helm-chart-rabbitmq
+  labels:
+    app: helm-chart-rabbitmq
+    chart: helm-chart-1.0.0
+    release: helm-chart-1597062494
+    heritage: Helm
+spec:
+  ports:
+    - name: node
+      protocol: TCP
+      port: 5672
+      targetPort: node
+    - name: management
+      protocol: TCP
+      port: 15672
+      targetPort: management
+---
+# Source: helm-chart/templates/deployments-flower.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helm-chart-1597062494-helm-chart-flower
+  labels:
+    app: helm-chart-flower
+    chart: helm-chart-1.0.0
+    release: helm-chart-1597062494
+    heritage: Helm
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: helm-chart-flower
+        release: helm-chart-1597062494
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: helm-chart-flower
+          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:test
+          imagePullPolicy: Always
+
+          env:
+          ports:
+            - name: flower
+              containerPort: 5555
+              protocol: TCP
+          args: ["flower"]
+          livenessProbe:
+            failureThreshold: 20
+            httpGet:
+              path: /
+              port: 5555
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          readinessProbe:
+            failureThreshold: 20
+            httpGet:
+              port: 5555
+              path: /
+            initialDelaySeconds: 10
+            periodSeconds: 5
+  selector:
+    matchLabels:
+      app: helm-chart-flower
+---
+# Source: helm-chart/templates/deployments-scheduler.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helm-chart-1597062494-helm-chart-scheduler
+  labels:
+    app: helm-chart-scheduler
+    chart: helm-chart-1.0.0
+    release: helm-chart-1597062494
+    heritage: Helm
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: helm-chart-scheduler
+  template:
+    metadata:
+      labels:
+        app: helm-chart-scheduler
+        release: helm-chart-1597062494
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: helm-chart-scheduler
+          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:test
+          imagePullPolicy: Always
+          env:
+          args: ["scheduler", "-n", "-1", "-p"]
+---
+# Source: helm-chart/templates/deployments-web.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helm-chart-1597062494-helm-chart-web
+  labels:
+    app: helm-chart-web
+    chart: helm-chart-1.0.0
+    release: helm-chart-1597062494
+    heritage: Helm
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 2
+  template:
+    metadata:
+      labels:
+        app:  helm-chart-web
+        release: helm-chart-1597062494
+    spec:
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: helm-chart-web
+          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:test
+          imagePullPolicy: Always
+          ports:
+            - name: web
+              containerPort: 8080
+              protocol: TCP
+          env:
+          args: ["webserver"]
+          livenessProbe:
+            httpGet:
+              path: "/health"
+              port: web
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              port: 8080
+              path: /health
+            initialDelaySeconds: 20
+
+  selector:
+    matchLabels:
+      app: helm-chart-web
+---
+# Source: helm-chart/templates/rabbitmq.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helm-chart-1597062494-helm-chart-rabbitmq
+  labels:
+    app: helm-chart-rabbitmq
+    chart: helm-chart-1.0.0
+    release: helm-chart-1597062494
+    heritage: Helm
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: helm-chart-rabbitmq
+        release: helm-chart-1597062494
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: helm-chart-rabbitmq
+          image: rabbitmq:3-management
+          imagePullPolicy: Always
+          env:
+            - name: RABBITMQ_DEFAULT_PASS
+              value: airflow
+            - name: RABBITMQ_DEFAULT_USER
+              value: airflow
+            - name: RABBITMQ_DEFAULT_VHOST
+              value: airflow
+          ports:
+            - name: node
+              containerPort: 5672
+            - name: management
+              containerPort: 15672
+          livenessProbe:
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - 'timeout 5 wget -O - -q --header "Authorization: Basic `echo -n \"airflow:airflow\" | base64`" http://127.0.0.1:15672/api/healthchecks/node | grep -qF "{\"status\":\"ok\"}"'
+  selector:
+    matchLabels:
+      app: helm-chart-rabbitmq
+---
+# Source: helm-chart/templates/statefulsets-workers.yaml
+# Workers are not in deployment, but in StatefulSet, to allow each worker expose a mini-server
+# that only serve logs, that will be used by the web server.
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: helm-chart-1597062494-helm-chart-worker
+  labels:
+    app: helm-chart-worker
+    chart: helm-chart-1.0.0
+    release: helm-chart-1597062494
+    heritage: Helm
+spec:
+  serviceName: "helm-chart-1597062494-helm-chart-workers"
+  selector:
+    matchLabels:
+      app: helm-chart-1597062494-helm-chart-worker
+  updateStrategy:
+    type: RollingUpdate
+  # Use experimental burst mode for faster StatefulSet scaling
+  #   https://github.com/kubernetes/kubernetes/commit/c2c5051adf096ffd48bf1dcf5b11cb47e464ecdd
+  podManagementPolicy: Parallel
+  replicas: 5
+  template:
+    metadata:
+      labels:
+        app: helm-chart-worker
+        release: helm-chart-1597062494
+    spec:
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: helm-chart-worker
+          imagePullPolicy: Always
+          image: "740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:test"
+          env:
+          args: ["worker"]
+          ports:
+            - name: wlog
+              containerPort: 8793
+              protocol: TCP
+
