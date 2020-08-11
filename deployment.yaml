@@ -238,14 +238,33 @@ spec:
         - name: worker
           image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:latest
           imagePullPolicy: Always
+
           # volumes:
           #     - /localpath/to/dags:/usr/local/airflow/dags
           env:
             - name: AIRFLOW_HOME
               value: "/usr/local/airflow"
+          ports:
+            - containerPort: 8973
+              name: worker
           args: ["worker"]
       imagePullSecrets:
         - name: ap-south-1-ecr-registry
   selector:
     matchLabels:
       app: airflow
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker-service
+spec:
+  type: NodePort
+  selector:
+    app: worker
+    tier: web
+  ports:
+    - name: worker
+      protocol: TCP
+      port: 8973
+      targetPort: worker

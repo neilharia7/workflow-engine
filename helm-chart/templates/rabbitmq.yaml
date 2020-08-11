@@ -8,7 +8,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.rabbitmq.replicas }}
   template:
     metadata:
       labels:
@@ -18,23 +18,23 @@ spec:
       restartPolicy: Always
       containers:
         - name: {{ .Chart.Name }}-rabbitmq
-          image: rabbitmq:3-management
-          imagePullPolicy: {{ .Values.airflow.image_pull_policy }}
+          image: {{ .Values.images.rabbitmq.repository }}
+          imagePullPolicy: {{ .Values.images.rabbitmq.pullPolicy }}
           env:
-            {{- range $setting, $option := .Values.rabbitmq.config }}
-            - name: {{ $setting }}
+            {{- range $key, $option := .Values.rabbitmq.env }}
+            - name: {{ $key }}
               value: {{ $option }}
             {{- end }}
           ports:
             - name: node
-              containerPort: 5672
+              containerPort: {{ .Values.ports.rabbitmqNode }}
             - name: management
-              containerPort: 15672
+              containerPort: {{ .Values.ports.rabbitmqManagement }}
           livenessProbe:
-            initialDelaySeconds: 20
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 5
+            initialDelaySeconds: {{ .Values.rabbitmq.liveliness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.rabbitmq.liveliness.periodSeconds }}
+            timeoutSeconds: {{ .Values.rabbitmq.liveliness.timeoutSeconds }}
+            failureThreshold: {{ .Values.rabbitmq.liveliness.failureThreshold }}
             exec:
               command:
                 - /bin/sh

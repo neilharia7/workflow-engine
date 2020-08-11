@@ -1,82 +1,25 @@
-# Duplicate this file and put your customization here
+# Select certain nodes for airflow pods.
+nodeSelector: {}
+affinity: {}
+tolerations: []
 
-airflowHomeDirectory: "/usr/local/airflow"
-
-# Airflow Images
-images:
-  airflow:
-    # base reposiotry for webserver/scheduler/workers
-    repository: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine
-    imageTag: latest
-    # Always or IfNotPresent
-    pullPolicy: IfNotPresent
-
-  flower:
-    repository: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine
-    imageTag: latest
-    # Always or IfNotPresent
-    pullPolicy: IfNotPresent
-  rabbitmq:
-    reposiory:
-
-# Enable RBAC (default on most clusters these days)
-rbacEnabled: true
-
-# Airflow executor
-# Options: SequentialExecutor, LocalExecutor, CeleryExecutor, KubernetesExecutor
-executor: "CeleryExecutor"
-
-# If this is true and using LocalExecutor/SequentialExecutor/KubernetesExecutor, the scheudler's
-# service account will have access to communicate with the api-server and launch pods.
-# If this is true and using the CeleryExecutor, the workers will be able to launch pods.
-allowPodLaunching: true
-
-
-
-# common settings and setting for the webserver
-airflow:
-  # You will need to define your frenet key:
-  # Generate fernet_key with:
-  #    python -c "from cryptography.fernet import Fernet; FERNET_KEY = Fernet.generate_key().decode(); print(FERNET_KEY)"
-  # fernet_key: ABCDABCDABCDABCDABCDABCDABCDABCDABCDABCD
-  fernet_key: ""
-  service:
-    type: ClusterIP
-  # mount path for persistant volume
-  dag_path: /dags
-  # set the max number of retries during container initialization
-  init_retry_loop:
-  # base image for webserver/scheduler/workers
-  image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine
-  imageTag: test
-  # image_pull_policy: Always or IfNotPresent
-  image_pull_policy: Always
-  # Set scheduler_num_runs to control how the schduler behaves:
-  #   -1 will let him looping indefinitively but it will never update the DAG
-  #   1 will have the scheduler quit after each refresh, but kubernetes will restart it
-  scheduler_num_runs: "-1"
-  # prefix to the endpoint of the webserver
-  # Ex: http://mycompany.com/airflow
-  # url_prefix is "/airflow"
-  url_prefix: "/airflow"
-  config: {}
-  port: 8080
-  worker:
-    port: 8793
-  webserver:
-    readinessProbe:
-      initialDelaySeconds: 15
-
-celery:
-  # Number of celery workers to initialize
-  num_workers: 5
-  port: 5555
-  service:
-    type: ClusterIP
+# Add common labels to all objects and pods defined in this chart.
+labels: {}
 
 ingress:
   # enable ingress
-  enabled: false
+  enabled: true
+
+  # Name of tls secret to use on ingress
+  tlsSecretName: ~
+
+  # Base domain for ingress vhosts
+  baseDomain: ~
+
+  # Enable platform authentication
+  auth:
+    enabled: false
+
   annotations:
     # Define the annotation here to configure rewriting rules related to your Load balancer
     #
@@ -112,36 +55,198 @@ ingress:
       # Example for Traefik:
       # traefik.frontend.rule.type: PathPrefixStrip
       # kubernetes.io/ingress.class: traefik
-  # hostname for both endpoint
-  host: ""
-  path:
-    # if web is '/airflow':
-    #  - UI will be accessible to '/airflow/admin'
-    #  - Healthcheck is at 'http://mycompany.com/airflow/health'
-    #  - api is at 'http://mycompany.com/airflow/api'
-    web: /airflow
-    # if flower is '/airflow/flower':
-    #  - api is at 'http://mycompany.com/airflow/flower'
-    flower: /airflow/flower
+    host: ""
+    path:
+      # if web is '/airflow':
+      #  - UI will be accessible to '/airflow/admin'
+      #  - Healthcheck is at 'http://mycompany.com/airflow/health'
+      #  - api is at 'http://mycompany.com/airflow/api'
+      web: /airflow
+      # if flower is '/airflow/flower':
+      #  - api is at 'http://mycompany.com/airflow/flower'
+      flower: /airflow/flower
 
-persistence:
+# Network policy configuration
+networkPolicies:
+  # Enabled network policies
   enabled: false
-  ## storageClass: Persistent Volume Storage Class
-  ## If defined, storageClassName: <storageClass>
-  ## If set to "-", storageClassName: "", which disables dynamic provisioning
-  ## If undefined (the default) or set to null, no storageClassName spec is
-  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
-  ##   GKE, AWS & OpenStack)
-  # storageClass: default
-  accessMode: ReadWriteOnce
-  size: 1Gi
 
+# Airflow home directory
+# Used for mount paths
+airflowHome: "/usr/local/airflow"
 
+env:
+  AIRFLOW_HOME: "/usr/local/airflow"
+
+# Default airflow repository
+defaultAirflowRepository: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine
+
+# Default airflow tag to deploy
+defaultAirflowTag: latest
+
+# Airflow Images
+images:
+  airflow:
+    # base reposiotry for webserver/scheduler/workers
+    repository: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine
+    tag: latest
+    # Always or IfNotPresent
+    pullPolicy: Always
+
+  flower:
+    repository: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine
+    tag: latest
+    # Always or IfNotPresent
+    pullPolicy: Always
+
+  rabbitmq:
+    repository: rabbitmq:3-management
+    tag: latest
+    # Always or IfNotPresent
+    pullPolicy: IfNotPresent
+
+# Fernet key settings
+# You will need to define your frenet key:
+# Generate fernet_key with:
+#    python -c "from cryptography.fernet import Fernet; FERNET_KEY = Fernet.generate_key().decode(); print(FERNET_KEY)"
+# fernet_key: ABCDABCDABCDABCDABCDABCDABCDABCDABCDABCD
+fernetKey: ~
+fernetKeySecretName: ~
+
+# Airflow Worker Config
+workers:
+  # Number of airflow celery workers in Deployment / StatefulSet
+  replicas: 1
+
+  resources: {}
+  #  limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  #  requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+  # Grace period for tasks to finish after SIGTERM is sent from kubernetes
+  terminationGracePeriodSeconds: 600
+
+  # Apply a HorizontalPodAutoscaler  # TODO future
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 10
+    targetCPUUtilization: 60
+    targetMemoryUtilization: 60
+
+# Airflow scheduler settings
+scheduler:
+
+  # Same configuration for readiness
+  livenessProbe:
+    initialDelaySeconds: 20
+    timeoutSeconds: 30
+    failureThreshold: 30
+    periodSeconds: 30
+
+  resources: {}
+  #  limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  #  requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+  # This setting tells kubernetes that its ok to evict
+  # when it wants to scale a node down.
+  safeToEvict: true  # TODO future
+
+# Airflow webserver settings
+webserver:
+  livenessProbe:
+    initialDelaySeconds: 15
+    timeoutSeconds: 30
+    failureThreshold: 20
+    periodSeconds: 5
+
+  readinessProbe:
+    initialDelaySeconds: 15
+    timeoutSeconds: 30
+    failureThreshold: 20
+    periodSeconds: 5
+
+  # Number of webservers
+  replicas: 1
+
+  resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  service:
+    type: ClusterIP
+
+# Flower settings
 flower:
+  # Number of flower
+  replicas: 1
+
+  resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
   # Url prefix for the endpoint of Flower
   # Ex: http://mycompany.com/airflow/flower
   # url_prefix is /airflow/flower
-  url_prefix: "/flower"
+  url_prefix: /flower
+
+  livenessProbe:
+    initialDelaySeconds: 15
+    timeoutSeconds: 30
+    failureThreshold: 20
+    periodSeconds: 5
+
+  readinessProbe:
+    initialDelaySeconds: 15
+    timeoutSeconds: 30
+    failureThreshold: 20
+    periodSeconds: 5
+
+  env:
+    AIRFLOW_HOME: "/usr/local/airflow"
+    # To prevent the error: ValueError: invalid literal for int() with base 10: 'tcp://10.0.0.83:5555'
+    FLOWER_PORT: "5555"
+
+  service:
+    type: ClusterIP
+
+# Rabbitmq Settings
+rabbitmq:
+  replicas: 2
+
+  resources: {}
+    #  limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    #  requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  env:
+    RABBITMQ_DEFAULT_USER: airflow
+    RABBITMQ_DEFAULT_PASS: airflow
+    RABBITMQ_DEFAULT_VHOST: airflow
+
+  liveliness:
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold:  5
 
 dags:
   # pickle_dag: send DAG using pickle from the scheduler to the worker
@@ -200,27 +305,23 @@ postgresql:
     ##
     enabled: true
 
-redis:
-  enabled: true
-  redisPassword: redis
-  persistence:
-    enabled: true
+persistence:
+  enabled: false
+  ## storageClass: Persistent Volume Storage Class
+  ## If defined, storageClassName: <storageClass>
+  ## If set to "-", storageClassName: "", which disables dynamic provisioning
+  ## If undefined (the default) or set to null, no storageClassName spec is
+  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  ##   GKE, AWS & OpenStack)
+  # storageClass: default
+  accessMode: ReadWriteOnce
+  size: 1Gi
 
-rabbitmq:
-  replicas: 3
-  service:
-    type: ClusterIP
-  node:
-    port: 5672
-    targetPort: node
-  management:
-    port: 15672
-    targetPort: management
-  config:
-    RABBITMQ_DEFAULT_USER: airflow
-    RABBITMQ_DEFAULT_PASS: airflow
-    RABBITMQ_DEFAULT_VHOST: airflow
+# All ports used by chart
+ports:
+  flowerUI: 5555
+  airflowUI: 8080
+  workerLogs: 8793
+  rabbitmqNode: 5672
+  rabbitmqManagement: 15672
 
-webserver:
-  readinessProbe:
-    initialDelaySeconds: 20

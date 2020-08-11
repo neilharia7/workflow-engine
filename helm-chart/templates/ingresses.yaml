@@ -20,7 +20,7 @@ spec:
             backend:
               serviceName: {{ template "airflow.fullname" . }}-web
               servicePort: web
-      host: {{ .Values.ingress.host }}
+{{/*      host: {{ .Values.ingress.host }}*/}}
 ---
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
@@ -39,9 +39,9 @@ spec:
   rules:
     - http:
         paths:
-          - path: /
+          - path: {{ .Values.flower.url_prefix }}(/|$)(.*)
             backend:
               serviceName: {{ template "airflow.fullname" . }}-flower
               servicePort: flower
-      host: flower.{{ .Values.ingress.host }}
+{{/*      host: flower.{{ .Values.ingress.host }}*/}}
 {{- end }}

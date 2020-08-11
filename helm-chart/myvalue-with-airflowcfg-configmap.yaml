@@ -102,7 +102,7 @@ airflow:
     broker_url = amqp://{{ RABBITMQ_CREDS }}@{{ RABBITMQ_HOST }}:5672/airflow
 
     # Another key Celery setting
-    result_backend = amqp://{{ RABBITMQ_CREDS }}@{{ RABBITMQ_HOST }}:5672/airflow
+    result_backend = db+mysql://{{ MYSQL_CREDS }}@{{ MYSQL_HOST }}:3306/{{ MYSQL_DB }}
 
     # Celery Flower is a sweet UI for Celery. Airflow has a shortcut to start
     # it `airflow flower`. This defines the port that Celery Flower runs on

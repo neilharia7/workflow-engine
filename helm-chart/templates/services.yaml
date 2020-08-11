@@ -8,14 +8,14 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-  type: {{ .Values.airflow.service.type }}
+  type: {{ .Values.webserver.service.type }}
   selector:
     app: {{ template "airflow.name" . }}-web
     release: {{ .Release.Name }}
   ports:
     - name: web
       protocol: TCP
-      port: {{ .Values.airflow.port }}
+      port: {{ .Values.ports.airflowUI }}
 ---
 apiVersion: v1
 kind: Service
@@ -27,14 +27,14 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-  type: {{ .Values.celery.service.type }}
+  type: {{ .Values.flower.service.type }}
   selector:
     app: {{ template "airflow.name" . }}-flower
     release: {{ .Release.Name }}
   ports:
     - name: flower
       protocol: TCP
-      port: {{ .Values.celery.port }}
+      port: {{ .Values.ports.flowerUI }}
 ---
 # Headless service for stable DNS entries of StatefulSet members.
 apiVersion: v1
@@ -50,7 +50,7 @@ spec:
   ports:
     - name: worker
       protocol: TCP
-      port: 8793
+      port: {{ .Values.ports.workerLogs }}
   clusterIP: None
   selector:
     app: {{ template "airflow.name" . }}-worker
@@ -69,9 +69,11 @@ spec:
   ports:
     - name: node
       protocol: TCP
-      port: 5672
+      port: {{ .Values.ports.rabbitmqNode }}
       targetPort: node
     - name: management
       protocol: TCP
-      port: 15672
+      port: {{ .Values.ports.rabbitmqManagement }}
       targetPort: management
+  selector:
+    app: {{ template "airflow.name" . }}-rabbitmq

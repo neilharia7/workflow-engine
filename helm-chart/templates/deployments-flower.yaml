@@ -8,7 +8,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.flower.replicas }}
   template:
     metadata:
       labels:
@@ -18,33 +18,34 @@ spec:
       restartPolicy: Always
       containers:
         - name: {{ .Chart.Name }}-flower
-          image: {{ .Values.airflow.image }}:{{ .Values.airflow.imageTag }}
-          imagePullPolicy: {{ .Values.airflow.image_pull_policy }}
-
+          image: {{ .Values.images.airflow.repository }}:{{ .Values.images.airflow.tag }}
+          imagePullPolicy: {{ .Values.images.airflow.pullPolicy }}
           env:
-            {{- range $setting, $option := .Values.airflow.config }}
-            - name: {{ $setting }}
+            {{- range $key, $option := .Values.flower.env }}
+            - name: {{ $key }}
               value: {{ $option }}
             {{- end }}
           ports:
             - name: flower
-              containerPort: {{ .Values.celery.port }}
+              containerPort: {{ .Values.ports.flowerUI }}
               protocol: TCP
           args: ["flower"]
           livenessProbe:
-            failureThreshold: 20
+            failureThreshold: {{ .Values.flower.livenessProbe.failureThreshold }}
             httpGet:
               path: /
-              port: {{ .Values.celery.port }}
-            initialDelaySeconds: 10
-            periodSeconds: 5
+              port: {{ .Values.ports.flowerUI }}
+            initialDelaySeconds: {{ .Values.flower.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.flower.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.flower.livenessProbe.timeoutSeconds }}
           readinessProbe:
-            failureThreshold: 20
+            failureThreshold: {{ .Values.flower.readinessProbe.failureThreshold }}
             httpGet:
-              port: {{ .Values.celery.port }}
+              port: {{ .Values.ports.flowerUI }}
               path: /
-            initialDelaySeconds: 10
-            periodSeconds: 5
+            initialDelaySeconds: {{ .Values.flower.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.flower.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.flower.readinessProbe.timeoutSeconds }}
   selector:
     matchLabels:
       app: {{ template "airflow.name" . }}-flower

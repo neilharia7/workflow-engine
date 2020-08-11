@@ -1,0 +1,4 @@
+Thank you for installing Airflow!
+
+Your release is named {{ .Release.Name }}.
+

@@ -33,7 +33,7 @@ RUN         set -ex \
         &&  locale-gen \
         &&  update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
         &&  useradd -ms /bin/bash -d ${AIRFLOW_HOME} airflow \
-	 &&  pip3 install mysql-connector-python mysql \ 
+	    &&  pip3 install mysql-connector-python mysql \
         &&  pip3 install -r /requirements/airflow.txt \
         &&  apt-get remove --purge -yqq $buildDeps libpq-dev \
         &&  apt-get clean \

@@ -8,12 +8,12 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 2
+      maxSurge: 25%
+      maxUnavailable: 25%
   template:
     metadata:
       labels:
@@ -24,29 +24,34 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
         - name: {{ .Chart.Name }}-web
-          image: {{ .Values.airflow.image }}:{{ .Values.airflow.imageTag }}
-          imagePullPolicy: {{ .Values.airflow.image_pull_policy}}
+          image: {{ .Values.images.airflow.repository }}:{{ .Values.images.airflow.tag }}
+          imagePullPolicy: {{ .Values.images.airflow.pullPolicy}}
           ports:
             - name: web
-              containerPort: {{ .Values.airflow.port}}
+              containerPort: {{ .Values.ports.airflowUI }}
               protocol: TCP
           env:
-            {{- range $setting, $option := .Values.airflow.config }}
+            {{- range $setting, $option := .Values.env }}
             - name: {{ $setting }}
               value: {{ $option }}
             {{- end }}
           args: ["webserver"]
           livenessProbe:
             httpGet:
-              path: "/health"
+              path: /health
               port: web
-            initialDelaySeconds: 10
-            periodSeconds: 5
+            initialDelaySeconds: {{ .Values.webserver.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.webserver.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.webserver.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.webserver.livenessProbe.failureThreshold }}
           readinessProbe:
             httpGet:
-              port: {{ .Values.airflow.port}}
+              port: {{ .Values.ports.airflowUI }}
               path: /health
             initialDelaySeconds: {{ .Values.webserver.readinessProbe.initialDelaySeconds | default 15 }}
+            periodSeconds: {{ .Values.webserver.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.webserver.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.webserver.readinessProbe.failureThreshold }}
 
   selector:
     matchLabels:
