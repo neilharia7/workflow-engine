@@ -16,7 +16,7 @@ spec:
   rules:
     - http:
         paths:
-          - path: /
+          - path: {{ .Values.ingress.path.web }}(/|$)(.*)
             backend:
               serviceName: {{ template "airflow.fullname" . }}-web
               servicePort: web
@@ -39,7 +39,7 @@ spec:
   rules:
     - http:
         paths:
-          - path: {{ .Values.flower.url_prefix }}(/|$)(.*)
+          - path: {{ .Values.ingress.path.flower }}(/|$)(.*)
             backend:
               serviceName: {{ template "airflow.fullname" . }}-flower
               servicePort: flower

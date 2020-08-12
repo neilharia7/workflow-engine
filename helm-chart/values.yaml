@@ -55,16 +55,17 @@ ingress:
       # Example for Traefik:
       # traefik.frontend.rule.type: PathPrefixStrip
       # kubernetes.io/ingress.class: traefik
-    host: ""
-    path:
-      # if web is '/airflow':
-      #  - UI will be accessible to '/airflow/admin'
-      #  - Healthcheck is at 'http://mycompany.com/airflow/health'
-      #  - api is at 'http://mycompany.com/airflow/api'
-      web: /airflow
-      # if flower is '/airflow/flower':
-      #  - api is at 'http://mycompany.com/airflow/flower'
-      flower: /airflow/flower
+
+  host: ""
+  path:
+    # if web is '/airflow':
+    #  - UI will be accessible to '/airflow/admin'
+    #  - Healthcheck is at 'http://mycompany.com/airflow/health'
+    #  - api is at 'http://mycompany.com/airflow/api'
+    web: /airflow
+    # if flower is '/airflow/flower':
+    #  - api is at 'http://mycompany.com/airflow/flower'
+    flower: /airflow/flower
 
 # Network policy configuration
 networkPolicies:
@@ -220,7 +221,7 @@ flower:
   env:
     AIRFLOW_HOME: "/usr/local/airflow"
     # To prevent the error: ValueError: invalid literal for int() with base 10: 'tcp://10.0.0.83:5555'
-    FLOWER_PORT: "5555"
+    FLOWER_PORT: '"5555"'
 
   service:
     type: ClusterIP

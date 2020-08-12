@@ -30,16 +30,6 @@ spec:
               containerPort: {{ .Values.ports.rabbitmqNode }}
             - name: management
               containerPort: {{ .Values.ports.rabbitmqManagement }}
-          livenessProbe:
-            initialDelaySeconds: {{ .Values.rabbitmq.liveliness.initialDelaySeconds }}
-            periodSeconds: {{ .Values.rabbitmq.liveliness.periodSeconds }}
-            timeoutSeconds: {{ .Values.rabbitmq.liveliness.timeoutSeconds }}
-            failureThreshold: {{ .Values.rabbitmq.liveliness.failureThreshold }}
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - 'timeout 5 wget -O - -q --header "Authorization: Basic `echo -n \"airflow:airflow\" | base64`" http://127.0.0.1:15672/api/healthchecks/node | grep -qF "{\"status\":\"ok\"}"'
   selector:
     matchLabels:
       app: {{ template "airflow.name" . }}-rabbitmq

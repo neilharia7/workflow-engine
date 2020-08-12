@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "airflow.fullname" . }}-worker
+  labels:
+    app: {{ template "airflow.name" . }}-worker
+    chart: {{ template "airflow.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app:  {{ template "airflow.name" . }}-worker
+        release: {{ .Release.Name }}
+    spec:
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: {{ .Chart.Name }}-web
+          image: {{ .Values.images.airflow.repository }}:{{ .Values.images.airflow.tag }}
+          imagePullPolicy: {{ .Values.images.airflow.pullPolicy}}
+          ports:
+            - name: worker
+              containerPort: {{ .Values.ports.workerLogs }}
+              protocol: TCP
+          env:
+            {{- range $setting, $option := .Values.env }}
+            - name: {{ $setting }}
+              value: {{ $option }}
+            {{- end }}
+          args: ["worker"]
+
+  selector:
+    matchLabels:
+      app: {{ template "airflow.name" . }}-worker

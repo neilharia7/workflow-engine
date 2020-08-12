@@ -14,6 +14,8 @@ RABBITMQ_MANAGEMENT_PORT=15672
 FLOWER_URL_PREFIX="${FLOWER_URL_PREFIX:-}"
 AIRFLOW_URL_PREFIX="${AIRFLOW_URL_PREFIX:-}"
 LOAD_DAGS_EXAMPLES="${LOAD_DAGS_EXAMPLES:-false}"
+AIRFLOW__CORE__REMOTE_LOGGING=true
+AIRFLOW__CORE__REMOTE_BASE_LOG_FOLDER="s3://flowxpert/airflow_logs"
 
 if [[ -z ${FERNET_KEY} ]]; then
 	FERNET_KEY=$(python3 -c "from cryptography.fernet import Fernet; FERNET_KEY = Fernet.generate_key().decode(); print(FERNET_KEY)")
@@ -40,7 +42,10 @@ AIRFLOW__CELERY__RESULT_BACKEND="db+mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${MY
 
 echo "SQL: " ${AIRFLOW__CORE__SQL_ALCHEMY_CONN}
 
-export AIRFLOW__CORE__SQL_ALCHEMY_CONN AIRFLOW__CELERY__RESULT_BACKEND
+export AIRFLOW__CORE__SQL_ALCHEMY_CONN \
+       AIRFLOW__CELERY__RESULT_BACKEND \
+       AIRFLOW__CORE__REMOTE_LOGGING \
+       AIRFLOW__CORE__REMOTE_BASE_LOG_FOLDER
 
 # wait for rabbitmq
 if [[ "$1" = "webserver" ]] || [[ "$1" = "worker" ]] || [[ "$1" = "scheduler" ]] || [[ "$1" = "flower" ]] ; then
@@ -73,6 +78,7 @@ if [[ "$1" = "webserver" ]] || [[ "$1" = "worker" ]] || [[ "$1" = "scheduler" ]]
     echo "Initialize database..."
     echo "$CMD initdb"
     ${CMD} initdb
+#    python3 ${AIRFLOW_HOME}/setup_connections.py
   fi
 fi
 
