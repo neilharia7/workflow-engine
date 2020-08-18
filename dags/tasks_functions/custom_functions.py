@@ -137,6 +137,7 @@ def customized_function(**kwargs):
 			print(f"Request Format Exception -> {e}")
 		
 		# build request body
+		print(f'request >> {request}')
 		payload = construct_json(request, task_data)
 		print(f'payload\n{payload}')
 		if method == "GET":
@@ -249,10 +250,12 @@ def customized_function(**kwargs):
 		cleanup = list()
 		
 		# adhoc code # TODO replace
+		# removes status codes from the values if the type is `map`
+		# (removed at the time of creating the intrepretable dag file)
 		for k, v in request_structure.items():
 			if isinstance(v, dict):
 				for k1, v1 in v.items():
-					v[k1] = v1.replace(k, '').strip('.')
+					v[k1] = v1.replace(k, '').strip('.') if v1.__contains__('.') else v1
 		
 		for key, val in request_structure.items():
 			if int(status) != int(key):
