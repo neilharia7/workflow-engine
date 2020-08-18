@@ -7,7 +7,7 @@ from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator
 
 default_args = {
-	'owner': 'me',
+	'owner': 'neilharia7',
 	'start_date': dt.datetime(2020, 6, 22),
 	'retries': 1,
 	'retry_delay': dt.timedelta(seconds=60)
@@ -34,13 +34,13 @@ def ingest_data(**kwargs):
 	current_dir = os.getcwd()
 	file_name = None
 	
-	for files in os.listdir(os.path.join(os.path.join(current_dir, folder_name), "efs")):
+	for files in os.listdir(os.path.join(current_dir, folder_name)):
 		
 		if files.endswith('.json'):
 			file_name = files
 			break
 	
-	file = current_dir + "/" + folder_name + "/efs/"
+	file = current_dir + "/" + folder_name + "/"
 	if file_name:
 		file += file_name
 		data = json.loads(open(file, 'r+').read())

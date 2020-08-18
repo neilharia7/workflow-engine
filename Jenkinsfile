@@ -1,34 +1,38 @@
 pipeline {
-    agent any
+	agent any
 
-    environment {
-        VERSION = sh(returnStdout: true, script: "git tag --sort version:refname | tail -1").trim()
-        IMAGE = "airflow:latest"
-        ECR = "740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine"
-    }
+	environment {
+		ECR = "740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine"
+		BUILD_IMAGE = "backend:latest"
+		LATEST_IMAGE = "${env.ECR}:latest"
+	}
 
-    stages {
+	stages {
 
-        stage("Get Build Version") {
-            steps {
-                script {
-                    tag = sh(returnStdout: true, script: "git tag --sort version:refname | tail -1").trim()
-                    env.BUILD_VERSION = tag
-                    echo "env-BUILD_VERSION"
-                    echo "${env.BUILD_VERSION}"
-                }
-            }
-        }
+		// Extract the git tag from the commit id
+		stage("Advent") {
+			steps {
+				script {
+					env.COMMIT_ID = sh(returnStdout: true, script: "git rev-list --tags --date-order | head -1").trim()
+					echo "${env.COMMIT_ID}"
+					env.BUILD_VERSION = sh(returnStdout: true, script: "git show-ref --tags | grep ${env.COMMIT_ID} | awk -F'[/*]' '{print \$3}'").trim()
+					echo "${env.BUILD_VERSION}"
 
-        stage("Building Image") {
-            steps {
-                script {
-                    docker.build("$IMAGE")
-                }
-            }
-        }
+					env.TAGGED_IMAGE = "${env.ECR}:${env.BUILD_VERSION}"
 
-        stage("Get Docker Creds") {
+				}
+			}
+		}
+
+		stage("Awakening") {
+			steps {
+				script {
+					docker.build("$BUILD_IMAGE")
+				}
+			}
+		}
+
+		stage("Discovery") {
             steps {
                 script {
 					sh '$(aws ecr get-login --no-include-email --region ap-south-1)'
@@ -36,23 +40,21 @@ pipeline {
             }
         }
 
-        stage("Push Image to ECR") {
+        stage("Life Purpose") {
             steps {
 	            script {
-                    sh """docker tag $IMAGE $ECR:$VERSION
-                        docker tag $IMAGE $ECR:latest
-                        docker push $ECR:latest
-                        docker push $ECR:$VERSION"""
-					}
+                    sh """docker tag ${env.BUILD_IMAGE} ${env.LATEST_IMAGE}
+                        docker tag ${env.BUILD_IMAGE} ${env.TAGGED_IMAGE}
+                        docker push ${env.LATEST_IMAGE}
+                        docker push ${env.TAGGED_IMAGE}"""
+				}
 			}
 
+			post {
+				success {
+					sh "docker rmi ${env.LATEST_IMAGE} ${env.TAGGED_IMAGE}"
+				}
+			}
         }
-    }
-
-    // remove docker images to save space
-	post {
-		always {
-			sh "docker rmi $IMAGE $ECR:latest $ECR:$VERSION | true"
-		}
 	}
 }

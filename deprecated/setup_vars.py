@@ -6,7 +6,7 @@ from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator
 
 default_args = {
-	'owner': 'me',
+	'owner': 'neilharia7',
 	'start_date': dt.datetime(2020, 6, 22),
 	'retries': 1,
 	'retry_delay': dt.timedelta(seconds=1)
