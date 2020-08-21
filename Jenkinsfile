@@ -20,11 +20,23 @@ pipeline {
 
 					env.TAGGED_IMAGE = "${env.ECR}:${env.BUILD_VERSION}"
 
+                    // Update the version in the helm chart
+					sh "python helm_env_updater.py"
 				}
+			}
+
+			post {
+			    failure {
+			        error "Error executing py file, adios.. "
+			    }
 			}
 		}
 
 		stage("Awakening") {
+		     when {
+		        expression { env.BUILD_IMAGE != null }
+		     }
+
 			steps {
 				script {
 					docker.build("$BUILD_IMAGE")
