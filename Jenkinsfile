@@ -5,6 +5,8 @@ pipeline {
 		ECR = "740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine"
 		BUILD_IMAGE = "backend:latest"
 		LATEST_IMAGE = "${env.ECR}:latest"
+		IP = "13.233.114.63"
+		USERNAME = "ec2-user"
 	}
 
 	// Let the adventure begin..
@@ -69,21 +71,22 @@ pipeline {
 			}
 		}
 
+        // TODO add rollback in future
 		stage ("Life Purpose") {
 			steps {
 				sh "chmod +x changeVersionTag.sh"
-				sh "./changeVersionTag ${env.BUILD_VERSION}"
+				sh "./changeVersionTag.sh ${env.BUILD_VERSION}"
 
 				sshagent(['Neil-Airlflow']) {
     				// some block
-    				sh "scp -o StrictHostKeyChecking=no k8s.yaml ec2-user@13.233.114.63:/home/ec2-user/"
+    				sh "scp -o StrictHostKeyChecking=no k8s.yaml ${env.USERNAME}@${env.IP}:/home/ec2-user/"
 
     				script {
     					try {
-    						sh "ssh ec2-user@13.233.114.63 kubectl apply -f ."
+    						sh "ssh ${env.USERNAME}@${env.IP} kubectl apply -f k8s.yaml"
     					} catch (err){
     					    echo err.getMessage()
-    						sh "ssh ec2-user@13.233.114.63 kubectl create -f ."
+    						sh "ssh ${env.USERNAME}@${env.IP} kubectl apply -f k8s.yaml"
     					}
     				}
 				}
