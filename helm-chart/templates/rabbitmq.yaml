@@ -18,7 +18,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: {{ .Chart.Name }}-rabbitmq
-          image: {{ .Values.images.rabbitmq.repository }}
+          image: {{ .Values.images.rabbitmq.repository }}:{{ .Values.images.rabbitmq.tag}}
           imagePullPolicy: {{ .Values.images.rabbitmq.pullPolicy }}
           env:
             {{- range $key, $option := .Values.rabbitmq.env }}

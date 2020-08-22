@@ -83,26 +83,26 @@ env:
 defaultAirflowRepository: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine
 
 # Default airflow tag to deploy
-defaultAirflowTag: latest
+defaultAirflowTag: tagVersion
 
 # Airflow Images
 images:
   airflow:
     # base reposiotry for webserver/scheduler/workers
     repository: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine
-    tag: latest
+    tag: tagVersion
     # Always or IfNotPresent
     pullPolicy: Always
 
   flower:
     repository: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine
-    tag: latest
+    tag: tagVersion
     # Always or IfNotPresent
     pullPolicy: Always
 
   rabbitmq:
-    repository: rabbitmq:3-management
-    tag: latest
+    repository: rabbitmq
+    tag: 3-management
     # Always or IfNotPresent
     pullPolicy: IfNotPresent
 

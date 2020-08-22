@@ -7,10 +7,11 @@ pipeline {
 		LATEST_IMAGE = "${env.ECR}:latest"
 	}
 
+	// Let the adventure begin..
 	stages {
 
 		// Extract the git tag from the commit id
-		stage("Advent") {
+		stage ("Advent") {
 			steps {
 				script {
 					env.COMMIT_ID = sh(returnStdout: true, script: "git rev-list --tags --date-order | head -1").trim()
@@ -19,44 +20,43 @@ pipeline {
 					echo "${env.BUILD_VERSION}"
 
 					env.TAGGED_IMAGE = "${env.ECR}:${env.BUILD_VERSION}"
-
-                    // Update the version in the helm chart
-					sh "python helm_env_updater.py"
 				}
 			}
 
 			post {
-			    failure {
-			        error "Error executing py file, adios.. "
-			    }
+				failure {
+					error "Error fetching credentials, inevitable death of pipeline, adios .."
+				}
 			}
 		}
 
-		stage("Awakening") {
-		     when {
-		        expression { env.BUILD_IMAGE != null }
-		     }
+		stage ("Awakening") {
+			when {
+				expression { env.BUILD_VERSION != null }
+			}
 
 			steps {
 				script {
 					docker.build("$BUILD_IMAGE")
+
+					// fetch aws login credentials
+					sh '$(aws ecr get-login --no-include-email --region ap-south-1)'
+				}
+			}
+
+			post {
+				failure {
+					error "Error building docker image, adios .. "
 				}
 			}
 		}
 
 		stage("Discovery") {
-            steps {
-                script {
-					sh '$(aws ecr get-login --no-include-email --region ap-south-1)'
-				}
-            }
-        }
+			steps {
 
-        stage("Life Purpose") {
-            steps {
-	            script {
-                    sh """docker tag ${env.BUILD_IMAGE} ${env.LATEST_IMAGE}
-                        docker tag ${env.BUILD_IMAGE} ${env.TAGGED_IMAGE}
+				script {
+					sh """docker tag ${env.BUILD_IMAGE} ${env.LATEST_IMAGE}
+                       	docker tag ${env.BUILD_IMAGE} ${env.TAGGED_IMAGE}
                         docker push ${env.LATEST_IMAGE}
                         docker push ${env.TAGGED_IMAGE}"""
 				}
@@ -67,6 +67,27 @@ pipeline {
 					sh "docker rmi ${env.LATEST_IMAGE} ${env.TAGGED_IMAGE}"
 				}
 			}
-        }
+		}
+
+		stage ("Life Purpose") {
+			steps {
+				sh "chmod +x changeVersionTag.sh"
+				sh "./changeVersionTag ${env.BUILD_VERSION}"
+
+				sshagent(['Neil-Airlflow']) {
+    				// some block
+    				sh "scp -o StrictHostKeyChecking=no k8s.yaml ec2-user@13.233.114.63:/home/ec2-user/"
+
+    				script {
+    					try {
+    						sh "ssh ec2-user@13.233.114.63 kubectl apply -f ."
+    					} catch (err){
+    					    echo err.getMessage()
+    						sh "ssh ec2-user@13.233.114.63 kubectl create -f ."
+    					}
+    				}
+				}
+			}
+		}
 	}
 }

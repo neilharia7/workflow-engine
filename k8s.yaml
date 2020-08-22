@@ -98,7 +98,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: web
-          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:k8s-test-1
+          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:tagVersion
           imagePullPolicy: Always
           env:
             - name: AIRFLOW_HOME
@@ -151,7 +151,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: flower
-          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:k8s-test-1
+          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:tagVersion
           imagePullPolicy: Always
           env:
             - name: AIRFLOW_HOME
@@ -185,7 +185,7 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
         - name: scheduler
-          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:k8s-test-1
+          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:tagVersion
           imagePullPolicy: Always
           # volumes:
           #     - /localpath/to/dags:/usr/local/airflow/dags
@@ -236,7 +236,7 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
         - name: worker
-          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:k8s-test-1
+          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:tagVersion
           imagePullPolicy: Always
           # volumes:
           #     - /localpath/to/dags:/usr/local/airflow/dags
