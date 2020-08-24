@@ -3,7 +3,7 @@ pipeline {
 
 	environment {
 		ECR = "740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine"
-		BUILD_IMAGE = "backend:latest"
+		BUILD_IMAGE = "engine:latest"
 		LATEST_IMAGE = "${env.ECR}:latest"
 		IP = "13.233.114.63"
 		USERNAME = "ec2-user"
@@ -11,7 +11,6 @@ pipeline {
 
 	// Let the adventure begin..
 	stages {
-
 		// Extract the git tag from the commit id
 		stage ("Advent") {
 			steps {
@@ -77,7 +76,7 @@ pipeline {
 				sh "chmod +x changeVersionTag.sh"
 				sh "./changeVersionTag.sh ${env.BUILD_VERSION}"
 
-				sshagent(['Neil-Airlflow']) {
+				sshagent(['Neil-Airflow']) {
     				// some block
     				sh "scp -o StrictHostKeyChecking=no k8s.yaml ${env.USERNAME}@${env.IP}:/home/ec2-user/"
 

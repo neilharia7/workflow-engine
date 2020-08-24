@@ -1,40 +1,90 @@
-# docker-airflow
-[![CI status](https://github.com/puckel/docker-airflow/workflows/CI/badge.svg?branch=master)](https://github.com/puckel/docker-airflow/actions?query=workflow%3ACI+branch%3Amaster+event%3Apush)
-[![Docker Build status](https://img.shields.io/docker/build/puckel/docker-airflow?style=plastic)](https://hub.docker.com/r/puckel/docker-airflow/tags?ordering=last_updated)
+# FlowXpert Engine (Airflow)
 
-[![Docker Hub](https://img.shields.io/badge/docker-ready-blue.svg)](https://hub.docker.com/r/puckel/docker-airflow/)
-[![Docker Pulls](https://img.shields.io/docker/pulls/puckel/docker-airflow.svg)]()
-[![Docker Stars](https://img.shields.io/docker/stars/puckel/docker-airflow.svg)]()
+[![forthebadge made-with-python](http://ForTheBadge.com/images/badges/made-with-python.svg)](https://www.python.org/)
 
-This repository contains **Dockerfile** of [apache-airflow](https://github.com/apache/incubator-airflow) for [Docker](https://www.docker.com/)'s [automated build](https://registry.hub.docker.com/u/puckel/docker-airflow/) published to the public [Docker Hub Registry](https://registry.hub.docker.com/).
+<!-- Docker build & CI status badges -->
+![Docker Hub](https://img.shields.io/badge/docker-ready-blue.svg)
+![semver](https://img.shields.io/badge/semver-1.0.8-blue)
 
-## Informations
+<!-- TABLE OF CONTENTS -->
+## Table of Contents
 
-* Based on Python (3.7-slim-buster) official Image [python:3.7-slim-buster](https://hub.docker.com/_/python/) and uses the official [Postgres](https://hub.docker.com/_/postgres/) as backend and [Redis](https://hub.docker.com/_/redis/) as queue
-* Install [Docker](https://www.docker.com/)
-* Install [Docker Compose](https://docs.docker.com/compose/install/)
-* Following the Airflow release from [Python Package Index](https://pypi.python.org/pypi/apache-airflow)
+-   [About the Project](#about-the-project)
+-   [Getting Started](#getting-started)
+    -   [Prerequisites](#prerequisites)
+-   [User Interface](#user-interface)
+-   [Usage](#usage)
+    -   [Test Setup](#test-setup)
+        -   [UI Links](#ui-links)
+        -   [Scale the number of workers](#scale-the-number-of-workers)
+        -   [Running other airflow commands](#running-other-airflow-commands)
+        -   [Simplified Celery broker configuration using Redis](#simplified-celery-broker-configuration-using-redis)
+    -   [Stable Setup](#stable-setup)
+        -   [Manual Installation](#manual-installation)
+        -   [Helm Deployment](#helm-deployment)
+-   [Release History](#release-history)
+-   [Roadmap](#roadmap)
+-   [Contribution Guidelines](#contribution-guidelines)
+-   [Issues?](#issues)
+-   [Acknowledgements](#acknowledgements)
+-   [Maintainer](#maintainer)
 
-## Installation
 
-Pull the image from the Docker repository.
+<!-- ABOUT THE PROJECT -->
+## About The Project
+Customized engine based on [Airflow](https://airflow.apache.org/) that automatically registers tailormade workflows published on the Workflow Designer.
 
-    docker pull puckel/docker-airflow
+-   Reads specialized json file from `AWS S3 bucket` thats is converted to pythonic code and gets registered as executable DAG (Directed Acyclic Graph) on the Airflow UI.
+-   Based on `Python (3.7-slim-buster)` official Image [python:3.7-slim-buster](https://hub.docker.com/_/python/) and uses `AWS RDS (MySQL)` as backend and `RabbitMQ` as queue that runs on top of Kubernetes Cluster residing in `AWS EKS`. 
 
-## Build
+## Getting Started
+Please visit the Airflow Platform documentation (latest **stable** release) for help with [installing Airflow](https://airflow.apache.org/installation.html), getting a [quick start](https://airflow.apache.org/start.html), or a more complete [tutorial](https://airflow.apache.org/tutorial.html).
 
-Optionally install [Extra Airflow Packages](https://airflow.incubator.apache.org/installation.html#extra-package) and/or python dependencies at build time :
+### Prerequisites
 
-    docker build --rm --build-arg AIRFLOW_DEPS="datadog,dask" -t puckel/docker-airflow .
-    docker build --rm --build-arg PYTHON_DEPS="flask_oauthlib>=0.9" -t puckel/docker-airflow .
+-   [Git](https://git-scm.com/downloads)
+-   [Docker](https://www.docker.com/)
+-   [Docker Compose](https://docs.docker.com/compose/install/)
 
-or combined
+## User Interface
+- **DAGs**: Overview of all DAGs in your environment.
 
-    docker build --rm --build-arg AIRFLOW_DEPS="datadog,dask" --build-arg PYTHON_DEPS="flask_oauthlib>=0.9" -t puckel/docker-airflow .
+  ![](images/dags.png)
 
-Don't forget to update the airflow images in the docker-compose files to puckel/docker-airflow:latest.
+- **Tree View**: Tree representation of a DAG that spans across time.
+
+  ![](images/tree.png)
+
+- **Graph View**: Visualization of a DAG's dependencies and their current status for a specific run.
+
+  ![](images/graph.png)
+
+- **Task Duration**: Total time spent on different tasks over time.
+
+  ![](images/duration.png)
+
+- **Gantt View**: Duration and overlap of a DAG.
+
+  ![](images/gantt.png)
+
+- **Code View**:  Quick way to view source code of a DAG.
+
+  ![](images/code.png)
+
 
 ## Usage
+
+### Test Setup 
+##### Note: 
+>   Test setup uses Redis as broker for CeleryExecutor
+
+Follow the commands to setup environment in your local machine
+
+    git clone https://<username>@bitbucket.org/team360noscope/airflow-experimental.git
+    
+    docker build -f Dockerfile-test -t puckel/docker-airflow .
+
+Don't forget to update the airflow images in the docker-compose files to puckel/docker-airflow:latest.
 
 By default, docker-airflow runs Airflow with **SequentialExecutor** :
 
@@ -56,50 +106,13 @@ NB : If you want to have DAGs example loaded (default=False), you've to set the 
 
     docker run -d -p 8080:8080 -e LOAD_EX=y puckel/docker-airflow
 
-If you want to use Ad hoc query, make sure you've configured connections:
-Go to Admin -> Connections and Edit "postgres_default" set this values (equivalent to values in airflow.cfg/docker-compose*.yml) :
-- Host : postgres
-- Schema : airflow
-- Login : airflow
-- Password : airflow
-
-For encrypted connection passwords (in Local or Celery Executor), you must have the same fernet_key. By default docker-airflow generates the fernet_key at startup, you have to set an environment variable in the docker-compose (ie: docker-compose-LocalExecutor.yml) file to set the same key accross containers. To generate a fernet_key :
-
-    docker run puckel/docker-airflow python -c "from cryptography.fernet import Fernet; FERNET_KEY = Fernet.generate_key().decode(); print(FERNET_KEY)"
-
-## Configuring Airflow
-
-It's possible to set any configuration value for Airflow from environment variables, which are used over values from the airflow.cfg.
-
-The general rule is the environment variable should be named `AIRFLOW__<section>__<key>`, for example `AIRFLOW__CORE__SQL_ALCHEMY_CONN` sets the `sql_alchemy_conn` config option in the `[core]` section.
-
-Check out the [Airflow documentation](http://airflow.readthedocs.io/en/latest/howto/set-config.html#setting-configuration-options) for more details
-
-You can also define connections via environment variables by prefixing them with `AIRFLOW_CONN_` - for example `AIRFLOW_CONN_POSTGRES_MASTER=postgres://user:password@localhost:5432/master` for a connection called "postgres_master". The value is parsed as a URI. This will work for hooks etc, but won't show up in the "Ad-hoc Query" section unless an (empty) connection is also created in the DB
-
-## Custom Airflow plugins
-
-Airflow allows for custom user-created plugins which are typically found in `${AIRFLOW_HOME}/plugins` folder. Documentation on plugins can be found [here](https://airflow.apache.org/plugins.html)
-
-In order to incorporate plugins into your docker container
-- Create the plugins folders `plugins/` with your custom plugins.
-- Mount the folder as a volume by doing either of the following:
-    - Include the folder as a volume in command-line `-v $(pwd)/plugins/:/usr/local/airflow/plugins`
-    - Use docker-compose-LocalExecutor.yml or docker-compose-CeleryExecutor.yml which contains support for adding the plugins folder as a volume
-
-## Install custom python package
-
-- Create a file "requirements.txt" with the desired python modules
-- Mount this file as a volume `-v $(pwd)/requirements.txt:/requirements.txt` (or add it as a volume in docker-compose file)
-- The entrypoint.sh script execute the pip install command (with --user option)
-
-## UI Links
+####  UI Links
 
 - Airflow: [localhost:8080](http://localhost:8080/)
-- Flower: [localhost:5555](http://localhost:5555/)
+- Flower: [localhost:5555](http://localhost:5555/) (If running with CeleryExecutor)
 
 
-## Scale the number of workers
+####  Scale the number of workers
 
 Easy scaling using docker-compose:
 
@@ -107,7 +120,7 @@ Easy scaling using docker-compose:
 
 This can be used to scale to a multi node setup using docker swarm.
 
-## Running other airflow commands
+#### Running other airflow commands
 
 If you want to run other airflow sub-commands, such as `list_dags` or `clear` you can do so like this:
 
@@ -122,29 +135,6 @@ You can also use this to run a bash shell or any other command in the same envir
     docker run --rm -ti puckel/docker-airflow bash
     docker run --rm -ti puckel/docker-airflow ipython
 
-# Simplified SQL database configuration using PostgreSQL
-
-If the executor type is set to anything else than *SequentialExecutor* you'll need an SQL database.
-Here is a list of PostgreSQL configuration variables and their default values. They're used to compute
-the `AIRFLOW__CORE__SQL_ALCHEMY_CONN` and `AIRFLOW__CELERY__RESULT_BACKEND` variables when needed for you
-if you don't provide them explicitly:
-
-| Variable            | Default value |  Role                |
-|---------------------|---------------|----------------------|
-| `POSTGRES_HOST`     | `postgres`    | Database server host |
-| `POSTGRES_PORT`     | `5432`        | Database server port |
-| `POSTGRES_USER`     | `airflow`     | Database user        |
-| `POSTGRES_PASSWORD` | `airflow`     | Database password    |
-| `POSTGRES_DB`       | `airflow`     | Database name        |
-| `POSTGRES_EXTRAS`   | empty         | Extras parameters    |
-
-You can also use those variables to adapt your compose file to match an existing PostgreSQL instance managed elsewhere.
-
-Please refer to the Airflow documentation to understand the use of extras parameters, for example in order to configure
-a connection that uses TLS encryption.
-
-Here's an important thing to consider:
-
 > When specifying the connection as URI (in AIRFLOW_CONN_* variable) you should specify it following the standard syntax of DB connections,
 > where extras are passed as parameters of the URI (note that all components of the URI should be URL-encoded).
 
@@ -152,7 +142,7 @@ Therefore you must provide extras parameters URL-encoded, starting with a leadin
 
     POSTGRES_EXTRAS="?sslmode=verify-full&sslrootcert=%2Fetc%2Fssl%2Fcerts%2Fca-certificates.crt"
 
-# Simplified Celery broker configuration using Redis
+#### Simplified Celery broker configuration using Redis
 
 If the executor type is set to *CeleryExecutor* you'll need a Celery broker. Here is a list of Redis configuration variables
 and their default values. They're used to compute the `AIRFLOW__CELERY__BROKER_URL` variable for you if you don't provide
@@ -168,6 +158,58 @@ it explicitly:
 
 You can also use those variables to adapt your compose file to match an existing Redis instance managed elsewhere.
 
-# Wanna help?
+### Stable Setup 
+>   With Kubernetes, Helm Chart, & AWS EKS
 
-Fork, improve and PR.
+#### Manual Installation
+Create all the deployments and services to run Airflow on Kubernetes:
+
+    kubectl apply -f deployment.yaml
+    
+This will create deployments for: 
+-   rabbitmq
+-   airflow-webserver
+-   airflow-scheduler
+-   airflow-flower
+-   airflow-worker
+
+and services for:
+-   rabbitmq
+-   airflow-webserver
+-   airflow-scheduler
+
+Port-Forward the service of webserver to access the application
+
+    kubectl port-forward service/<airflow-webserver-service-name> 8080:8080 --address:<private-ip-of-server>
+
+#### Helm Deployment 
+>   Deployment recommended via CI-CD pipeline
+-   under development
+
+Ensure your helm installation is done, and enter the following command
+
+    helm install ./helm-chart --generate-name
+
+Follow the `notes` generated at the end of helm deployment for more instructions
+
+## Release History
+>   Contains all the git tag releases/issue fixes
+
+## Roadmap
+>   Coming Soon..
+
+## Contribution Guidelines
+-   Fork
+-   Pick up an issue or check TODOs
+-   Write test cases/add or improve feature(s)
+-   Send pull requests
+
+## Issues?
+-   Contact Repo admin or maintainers
+
+## Acknowledgements
+-   [Apache Airflow](https://airflow.apache.org/)
+-   [Puckel](https://github.com/puckel/docker-airflow)
+
+## Maintainer
+-   [neilharia7](https://github.com/neilharia7)
