@@ -2,11 +2,9 @@
 
 [![forthebadge made-with-python](http://ForTheBadge.com/images/badges/made-with-python.svg)](https://www.python.org/)
 
-<!-- Docker build & CI status badges -->
 ![Docker Hub](https://img.shields.io/badge/docker-ready-blue.svg)
 ![semver](https://img.shields.io/badge/semver-1.0.8-blue)
 
-<!-- TABLE OF CONTENTS -->
 ## Table of Contents
 
 -   [About the Project](#about-the-project)
@@ -29,8 +27,6 @@
 -   [Acknowledgements](#acknowledgements)
 -   [Maintainer](#maintainer)
 
-
-<!-- ABOUT THE PROJECT -->
 ## About The Project
 Customized engine based on [Airflow](https://airflow.apache.org/) that automatically registers tailormade workflows published on the Workflow Designer.
 
