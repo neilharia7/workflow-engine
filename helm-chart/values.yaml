@@ -123,13 +123,13 @@ workers:
   # Number of airflow celery workers in Deployment / StatefulSet
   replicas: 2
 
-  resources: {}
-  #  limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  #  requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+  resources:
+    limits:
+      cpu: 800m
+      memory: 1024Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
 
   # Grace period for tasks to finish after SIGTERM is sent from kubernetes
   terminationGracePeriodSeconds: 600
@@ -152,13 +152,13 @@ scheduler:
     failureThreshold: 30
     periodSeconds: 30
 
-  resources: {}
-  #  limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  #  requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+  resources:
+    limits:
+      cpu: 800m
+      memory: 1024Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
 
   # This setting tells kubernetes that its ok to evict
   # when it wants to scale a node down.
@@ -182,12 +182,12 @@ webserver:
   replicas: 1
 
   resources: {}
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
+#    limits:
+#      cpu: 800m
+#      memory: 1024Mi
+#    requests:
+#      cpu: 200m
+#      memory: 256Mi
 
   service:
     type: ClusterIP
