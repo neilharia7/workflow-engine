@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "airflow.fullname" . }}-rabbitmq
+  name: rabbitmq
   labels:
     app: {{ template "airflow.name" . }}-rabbitmq
     chart: {{ template "airflow.chart" . }}
@@ -18,7 +18,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: {{ .Chart.Name }}-rabbitmq
-          image: {{ .Values.images.rabbitmq.repository }}:{{ .Values.images.rabbitmq.tag}}
+          image: {{ .Values.images.rabbitmq.repository }}:{{ .Values.images.rabbitmq.tag }}
           imagePullPolicy: {{ .Values.images.rabbitmq.pullPolicy }}
           env:
             {{- range $key, $option := .Values.rabbitmq.env }}

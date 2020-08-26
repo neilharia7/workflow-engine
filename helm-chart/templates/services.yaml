@@ -59,13 +59,16 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "airflow.fullname" . }}-rabbitmq
+  name: rabbitmq
   labels:
     app: {{ template "airflow.name" . }}-rabbitmq
     chart: {{ template "airflow.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
+  type: ClusterIP
+  selector:
+    app: {{ template "airflow.name" . }}-rabbitmq
   ports:
     - name: node
       protocol: TCP
@@ -75,5 +78,4 @@ spec:
       protocol: TCP
       port: {{ .Values.ports.rabbitmqManagement }}
       targetPort: management
-  selector:
-    app: {{ template "airflow.name" . }}-rabbitmq
+

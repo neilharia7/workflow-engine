@@ -71,7 +71,7 @@ RUN set -ex \
 
 COPY script/entrypoint-test.sh /entrypoint.sh
 COPY airflow.cfg ${AIRFLOW_USER_HOME}/airflow.cfg
-COPY test.py ${AIRFLOW_USER_HOME}/test.py
+# COPY test.py ${AIRFLOW_USER_HOME}/test.py
 COPY setup_connections.py ${AIRFLOW_USER_HOME}/setup_connections.py
 RUN     chown -R airflow: ${AIRFLOW_USER_HOME} \
         &&  chmod +x /entrypoint.sh

@@ -62,10 +62,10 @@ ingress:
     #  - UI will be accessible to '/airflow/admin'
     #  - Healthcheck is at 'http://mycompany.com/airflow/health'
     #  - api is at 'http://mycompany.com/airflow/api'
-    web: /airflow
+    web: /
     # if flower is '/airflow/flower':
     #  - api is at 'http://mycompany.com/airflow/flower'
-    flower: /airflow/flower
+    flower: /flower
 
 # Network policy configuration
 networkPolicies:
@@ -83,20 +83,20 @@ env:
 defaultAirflowRepository: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine
 
 # Default airflow tag to deploy
-defaultAirflowTag: tagVersion
+defaultAirflowTag: latest
 
 # Airflow Images
 images:
   airflow:
     # base reposiotry for webserver/scheduler/workers
     repository: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine
-    tag: tagVersion
+    tag: latest
     # Always or IfNotPresent
     pullPolicy: Always
 
   flower:
     repository: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine
-    tag: tagVersion
+    tag: latest
     # Always or IfNotPresent
     pullPolicy: Always
 
