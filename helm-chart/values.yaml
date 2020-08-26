@@ -85,6 +85,10 @@ defaultAirflowRepository: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxper
 # Default airflow tag to deploy
 defaultAirflowTag: latest
 
+# credentials to pull image
+secrets:
+  name: ap-south-1-ecr-registry
+
 # Airflow Images
 images:
   airflow:
@@ -117,7 +121,7 @@ fernetKeySecretName: ~
 # Airflow Worker Config
 workers:
   # Number of airflow celery workers in Deployment / StatefulSet
-  replicas: 1
+  replicas: 2
 
   resources: {}
   #  limits:
@@ -248,6 +252,9 @@ rabbitmq:
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold:  5
+
+  service:
+    type: ClusterIP
 
 dags:
   # pickle_dag: send DAG using pickle from the scheduler to the worker

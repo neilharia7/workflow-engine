@@ -7,6 +7,8 @@ pipeline {
 		LATEST_IMAGE = "${env.ECR}:latest"
 		IP = "13.233.114.63"
 		USERNAME = "ec2-user"
+		REMOTE_SERVER = "${env.USERNAME}@${env.IP}"
+		PATH = "/home/${env.USERNAME}/Neil/airflow-experimental/helm-chart"
 	}
 
 	// Let the adventure begin..
@@ -77,15 +79,22 @@ pipeline {
 				sh "./changeVersionTag.sh ${env.BUILD_VERSION}"
 
 				sshagent(['Neil-Airflow']) {
-    				// some block
-    				sh "scp -o StrictHostKeyChecking=no k8s.yaml ${env.USERNAME}@${env.IP}:/home/ec2-user/"
+				    // assumes git repo  is already cloned in the remote server
+    				sh "scp -o StrictHostKeyChecking=no helm-chart/Chart.yaml helm-chart/values.yaml ${env.REMOTE_SERVER}:${env.PATH}/"
+    				sh "scp -o StrictHostKeyChecking=no credentials.sh ${env.REMOTE_SERVER}:/home/${env.USERNAME}/"
 
     				script {
     					try {
-    						sh "ssh ${env.USERNAME}@${env.IP} kubectl apply -f k8s.yaml"
-    					} catch (err){
+    					    // fetch credentials
+    					    sh "ssh ${env.REMOTE_SERVER} sh credentials.sh"
+    						sh "ssh ${env.REMOTE_SERVER} helm install ./Neil/airflow-experimental/helm-chart --generate-name"
+    					} catch (err) {
     					    echo err.getMessage()
-    						sh "ssh ${env.USERNAME}@${env.IP} kubectl apply -f k8s.yaml"
+    					    // not the recommended way to helm chart
+    					    // TODO improve && maintain rollback in case
+                            env.PREV_CHART = sh(returnStdout: true, script: "ssh ${env.REMOTE_SERVER} helm list --short | grep helm-chart").trim()
+                            sh "ssh ${env.REMOTE_SERVER} helm delete ${env.PREV_CHART}"
+                            sh "ssh ${env.USERNAME}@${env.IP} helm install Neil/airflow-experimental/helm-chart --generate-name"
     					}
     				}
 				}

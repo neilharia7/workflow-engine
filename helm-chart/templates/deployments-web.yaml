@@ -22,6 +22,8 @@ spec:
     spec:
       restartPolicy: Always
       terminationGracePeriodSeconds: 10
+      imagePullSecrets:
+        - name: {{ .Values.secrets.name }}
       containers:
         - name: {{ .Chart.Name }}-web
           image: {{ .Values.images.airflow.repository }}:{{ .Values.images.airflow.tag }}
