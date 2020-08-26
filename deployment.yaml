@@ -22,7 +22,7 @@ kind: Service
 metadata:
   name: web
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: airflow
     tier: web
@@ -37,7 +37,7 @@ kind: Service
 metadata:
   name: flower
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: airflow
     tier: flower
@@ -98,7 +98,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: web
-          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:latest
+          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:tagVersion
           imagePullPolicy: Always
           env:
             - name: AIRFLOW_HOME
@@ -108,10 +108,10 @@ spec:
               containerPort: 8080
           resources:
             limits:
-              cpu: 200m
-              memory: 256Mi
+              cpu: 800m
+              memory: 1024Mi
             requests:
-              cpu: 200m
+              cpu: 300m
               memory: 256Mi
           args: ["webserver"]
           livenessProbe:
@@ -119,8 +119,9 @@ spec:
               path: /health
               port: 8080
             initialDelaySeconds: 30
+            timeoutSeconds: 30
             failureThreshold: 20
-            periodSeconds: 5
+            periodSeconds: 10
           readinessProbe:
             httpGet:
               port: 8080
@@ -128,7 +129,7 @@ spec:
             initialDelaySeconds: 30
             timeoutSeconds: 30
             failureThreshold: 20
-            periodSeconds: 5
+            periodSeconds: 10
       imagePullSecrets:
         - name: ap-south-1-ecr-registry
   selector:
@@ -150,7 +151,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: flower
-          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:latest
+          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:tagVersion
           imagePullPolicy: Always
           env:
             - name: AIRFLOW_HOME
@@ -184,33 +185,34 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
         - name: scheduler
-          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:latest
+          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:tagVersion
           imagePullPolicy: Always
           # volumes:
           #     - /localpath/to/dags:/usr/local/airflow/dags
           env:
             - name: AIRFLOW_HOME
               value: "/usr/local/airflow"
-          readinessProbe:
-           initialDelaySeconds: 10
-           timeoutSeconds: 10
-           failureThreshold: 20
-           periodSeconds: 30
-           exec:
-             command:
-               - /usr/bin/env
-               - AIRFLOW__CORE__LOGGING_LEVEL=ERROR
-               - python3
-               - -Wignore
-               - -c
-               - |
-                 from airflow.jobs.scheduler_job import SchedulerJob
-                 from airflow.utils.db import create_session
-                 from airflow.utils.net import get_hostname
-                 import sys
-                 with create_session() as session:
-                   job = session.query(SchedulerJob).filter_by(hostname=get_hostname()).order_by(SchedulerJob.latest_heartbeat.desc()).limit(1).first()
-                 sys.exit(0 if job.is_alive() else 1)
+          livenessProbe:
+              initialDelaySeconds: 10
+              timeoutSeconds: 30
+              failureThreshold: 10
+              periodSeconds: 30
+              exec:
+                  command:
+                    - /usr/bin/env
+                    - AIRFLOW__CORE__LOGGING_LEVEL=ERROR
+                    - python3
+                    - -Wignore
+                    - -c
+                    - |
+                      from airflow.jobs.scheduler_job import SchedulerJob
+                      from airflow.utils.db import create_session
+                      from airflow.utils.net import get_hostname
+                      import sys
+
+                      with create_session() as session:
+                        job = session.query(SchedulerJob).filter_by(hostname=get_hostname()).order_by(SchedulerJob.latest_heartbeat.desc()).limit(1).first()
+                      sys.exit(0 if job.is_alive() else 1)
           args: ["scheduler"]
       imagePullSecrets:
         - name: ap-south-1-ecr-registry
@@ -223,7 +225,7 @@ kind: Deployment
 metadata:
   name: worker
 spec:
-  replicas: 3
+  replicas: 1
   template:
     metadata:
       labels:
@@ -234,17 +236,13 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
         - name: worker
-          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:latest
+          image: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine:tagVersion
           imagePullPolicy: Always
-
           # volumes:
           #     - /localpath/to/dags:/usr/local/airflow/dags
           env:
             - name: AIRFLOW_HOME
               value: "/usr/local/airflow"
-          ports:
-            - containerPort: 8973
-              name: worker
           args: ["worker"]
       imagePullSecrets:
         - name: ap-south-1-ecr-registry
@@ -252,17 +250,34 @@ spec:
     matchLabels:
       app: airflow
 ---
-apiVersion: v1
-kind: Service
+apiVersion: extensions/v1beta1
+kind: Ingress
 metadata:
-  name: worker-service
+  name: web-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
-  type: NodePort
-  selector:
-    app: worker
-    tier: web
-  ports:
-    - name: worker
-      protocol: TCP
-      port: 8973
-      targetPort: worker
+  rules:
+  - http:
+      paths:
+      - path: /
+        backend:
+          serviceName: web
+          servicePort: 8080
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: flower-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /flower(/|$)(.*)
+        backend:
+          serviceName: flower
+          servicePort: 5555

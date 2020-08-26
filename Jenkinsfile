@@ -7,8 +7,6 @@ pipeline {
 		LATEST_IMAGE = "${env.ECR}:latest"
 		IP = "13.233.114.63"
 		USERNAME = "ec2-user"
-		REMOTE_SERVER = "${env.USERNAME}@${env.IP}"
-		PATH = "/home/${env.USERNAME}/Neil/airflow-experimental/helm-chart"
 	}
 
 	// Let the adventure begin..
@@ -80,21 +78,21 @@ pipeline {
 
 				sshagent(['Neil-Airflow']) {
 				    // assumes git repo  is already cloned in the remote server
-    				sh "scp -o StrictHostKeyChecking=no helm-chart/Chart.yaml helm-chart/values.yaml ${env.REMOTE_SERVER}:${env.PATH}/"
-    				sh "scp -o StrictHostKeyChecking=no credentials.sh ${env.REMOTE_SERVER}:/home/${env.USERNAME}/"
+    				sh "scp -o StrictHostKeyChecking=no helm-chart/Chart.yaml helm-chart/values.yaml ${env.USERNAME}@${env.IP}:/home/ec2-user/Neil/airflow-experimental/helm-chart/"
+    				// sh "scp -o StrictHostKeyChecking=no credentials.sh ${env.REMOTE_SERVER}:/home/${env.USERNAME}/"
 
     				script {
     					try {
     					    // fetch credentials
-    					    sh "ssh ${env.REMOTE_SERVER} sh credentials.sh"
-    						sh "ssh ${env.REMOTE_SERVER} helm install ./Neil/airflow-experimental/helm-chart --generate-name"
+    					    // sh "ssh ${env.REMOTE_SERVER} sh credentials.sh"
+    						sh "ssh ${env.USERNAME}@${env.IP} helm install ./Neil/airflow-experimental/helm-chart --generate-name"
     					} catch (err) {
     					    echo err.getMessage()
     					    // not the recommended way to helm chart
     					    // TODO improve && maintain rollback in case
-                            env.PREV_CHART = sh(returnStdout: true, script: "ssh ${env.REMOTE_SERVER} helm list --short | grep helm-chart").trim()
-                            sh "ssh ${env.REMOTE_SERVER} helm delete ${env.PREV_CHART}"
-                            sh "ssh ${env.USERNAME}@${env.IP} helm install Neil/airflow-experimental/helm-chart --generate-name"
+    						env.PREV_CHART = sh(returnStdout: true, script: "ssh ${env.USERNAME}@${env.IP} helm list --short | grep helm-chart").trim()
+    						sh "ssh ${env.USERNAME}@${env.IP} helm delete ${env.PREV_CHART}"
+    						sh "ssh ${env.USERNAME}@${env.IP} helm install ./Neil/airflow-experimental/helm-chart --generate-name"
     					}
     				}
 				}

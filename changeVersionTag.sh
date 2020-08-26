@@ -6,7 +6,8 @@ mv temp.yaml helm-chart/values.yaml
 
 sed "s/tagVersion/$1/g" helm-chart/Chart.yaml > temp.yaml
 mv temp.yaml helm-chart/Chart.yaml
+cat helm-chart/Chart.yaml
 
 # Temp solution
-sed "s/tagVersion/$1/g" k8s.yaml > temp.yaml
-mv temp.yaml k8s.yaml
+sed "s/tagVersion/$1/g" deployment.yaml > temp.yaml
+mv temp.yaml deployment.yaml
