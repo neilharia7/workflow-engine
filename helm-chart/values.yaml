@@ -65,6 +65,8 @@ ingress:
     web: /
     # if flower is '/airflow/flower':
     #  - api is at 'http://mycompany.com/airflow/flower'
+
+    # TODO change once domain has been setup
     flower: /flower
 
 # Network policy configuration
@@ -83,7 +85,9 @@ env:
 defaultAirflowRepository: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine
 
 # Default airflow tag to deploy
-defaultAirflowTag: latest
+# gets changed once CI-CD pipeline kicks
+defaultAirflowTag: tagVersion
+
 
 # credentials to pull image
 secrets:
@@ -94,13 +98,15 @@ images:
   airflow:
     # base reposiotry for webserver/scheduler/workers
     repository: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine
-    tag: latest
+    # gets changed once CI-CD pipeline kicks
+    tag: tagVersion
     # Always or IfNotPresent
     pullPolicy: Always
 
   flower:
     repository: 740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine
-    tag: latest
+    # gets changed once CI-CD pipeline kicks
+    tag: tagVersion
     # Always or IfNotPresent
     pullPolicy: Always
 
@@ -136,7 +142,7 @@ workers:
 
   # Apply a HorizontalPodAutoscaler  # TODO future
   autoscaling:
-    enabled: false
+    enabled: true
     minReplicas: 1
     maxReplicas: 10
     targetCPUUtilization: 60
@@ -208,7 +214,6 @@ flower:
   # Url prefix for the endpoint of Flower
   # Ex: http://mycompany.com/airflow/flower
   # url_prefix is /airflow/flower
-  url_prefix: /flower
 
   livenessProbe:
     initialDelaySeconds: 15
@@ -255,7 +260,6 @@ rabbitmq:
 
   service:
     type: ClusterIP
-
 dags:
   # pickle_dag: send DAG using pickle from the scheduler to the worker
   pickle_dag: true

@@ -5,6 +5,7 @@ import requests
 from zeus.utils import *
 
 
+# TODO refactor the structure completely following DRY
 def request_formatter(request_json: dict) -> dict:
 	"""
 	format ->
@@ -108,10 +109,16 @@ def customized_function(**kwargs):
 	
 	elif task_info.get('type') == "api":  # transform_type, input & output keys will be empty
 		
-		request = task_info.get('request', {})  # empty dict if no request in case of GET method
+		request = task_info.get('request', dict())  # empty dict if no request in case of GET method
 		method = task_info.get('method')
 		url = task_info.get('url')
-		headers = task_info.get('headers')
+		headers = task_info.get('headers', dict())
+		
+		# static, dynamic header mapping check
+		# TODO add mapping functionality
+		for key, value in headers.items():
+			if isinstance(value, dict) and value.get('type') and value.get('type') == "static":
+				headers[key] = value.get("value")
 		
 		try:
 			# if passed through API, override
