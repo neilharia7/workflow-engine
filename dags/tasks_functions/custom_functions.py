@@ -36,8 +36,6 @@ def format_query(task_data, query):
 	
 	rule = query.get('rule')
 	data = query.get('data')
-	# print("rule", rule)
-	# print("data", data)
 	
 	for key, val in task_data.items():
 		data = update_nested_dict(data, key, val)
