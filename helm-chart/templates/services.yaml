@@ -33,7 +33,7 @@ spec:
     release: {{ .Release.Name }}
   ports:
     - name: flower
-      prot  ocol: TCP
+      protocol: TCP
       port: {{ .Values.ports.flowerUI }}
 ---
 # Headless service for stable DNS entries of StatefulSet members.
