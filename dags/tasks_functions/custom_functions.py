@@ -109,6 +109,7 @@ def customized_function(**kwargs):
 		
 		request = task_info.get('request', dict())  # empty dict if no request in case of GET method
 		method = task_info.get('method')
+		params = task_info.get('params', dict())
 		url = task_info.get('url')
 		headers = task_info.get('headers', dict())
 		
@@ -118,6 +119,15 @@ def customized_function(**kwargs):
 			if isinstance(value, dict) and value.get('type') and value.get('type') == "static":
 				headers[key] = value.get("value")
 		
+		# TODO format the structure in classes -> production level code not adhoc
+		if params:
+			for key, value in params.items():
+				if isinstance(value, dict) and value.get('type') and value.get('type') == "static":
+					params[key] = value.get('value')
+			
+			# removes the {} from the url and appends the value to the url
+			url = url.split("{")[0] + [val for key, val in params.items()][0]
+			
 		try:
 			# if passed through API, override
 			user_input = kwargs['dag_run'].conf['request']['params']
