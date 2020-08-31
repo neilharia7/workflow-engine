@@ -2,32 +2,33 @@
 import sys
 from datetime import datetime
 from functools import reduce
+import re
 
 
-def datadog_success_event(context, **kwargs):
-	"""
-	
-	:param context:
-	:param kwargs:
-	:return:
-	"""
-	pass
-
-
-def datadog_event(context, **kwargs):
-	"""
-	
-	:param context:
-	:param kwargs:
-	:return:
-	"""
-	dag_id = context['task_instance'].dag_id
-	
-	
-	
-	tag = [
-		f'dag_id:',
-	]
+# def datadog_success_event(context, **kwargs):
+# 	"""
+#
+# 	:param context:
+# 	:param kwargs:
+# 	:return:
+# 	"""
+# 	pass
+#
+#
+# def datadog_event(context, **kwargs):
+# 	"""
+#
+# 	:param context:
+# 	:param kwargs:
+# 	:return:
+# 	"""
+# 	dag_id = context['task_instance'].dag_id
+#
+#
+#
+# 	tag = [
+# 		f'dag_id:',
+# 	]
 
 
 def change_datetime(string, old_format, new_format):
@@ -47,7 +48,7 @@ def parses_to_integer(string):
 	if string:
 		try:
 			return int(float(string))
-		except Exception as e:
+		except ValueError:
 			# print(e)
 			return string
 	else:
@@ -84,6 +85,25 @@ def construct_json(json_structure, masala):
 	return json_structure
 
 
+def dict_merge(data):
+	"""
+	Converts list of tuple of dict to dict
+
+	:param data:
+	:return:
+	"""
+
+	if len(data) == 1:
+		return data[0]
+	else:
+		temp_dict = dict()
+		# assuming tuple of dict
+		for idx in range(len(data)):
+			if isinstance(data[idx], dict):
+				temp_dict.update(data[idx])
+		return temp_dict
+
+
 # custom utility functions
 def concat(**kwargs):
 	"""
@@ -100,20 +120,9 @@ def concat(**kwargs):
 	
 	# get data from previous tasks
 	complete_data = task_instance.xcom_pull(key=None, task_ids=task_info.get('parent_task'))
-	
-	if len(complete_data) == 1:
-		complete_data = complete_data[0]
-	
-	else:
-		temp = {}
-		# assuming tuple of dict
-		for idx in range(len(complete_data)):
-			if isinstance(complete_data[idx], dict):
-				temp.update(complete_data[idx])
-		
-		complete_data = temp
-	
-	print("complete_data", complete_data)
+
+	complete_data = dict_merge(complete_data)
+	print(f"complete_data {complete_data}")
 	
 	inputs = task_info.get('input')  # dict
 	output = task_info.get('output')  # dict
@@ -134,6 +143,21 @@ def concat(**kwargs):
 		kwargs['ti'].xcom_push(key=key, value={key: transform})
 	
 	return task_info.get('child_task')[0]
+
+
+def regex_match(a, b):
+	"""
+
+	:param a: object
+	:param b: regex string (assumption)
+	:return:
+	"""
+
+	try:
+		return True if re.match(r'{}'.format(b), a) else False
+	except TypeError as te:
+		print(f"regex match fail >> {te}")
+		return False
 
 
 def update_nested_dict(data, key, value):
@@ -180,6 +204,7 @@ def logic_decoder(rules, data=None):
 		"?:": (lambda a, b, c: b if a else c),
 		"log": (lambda a: a if sys.stdout.write(str(a)) else a),
 		"in": (lambda a, b: a in b if "__contains__" in dir(b) else False),
+		"regex": lambda a, b: regex_match(a, b),
 		"var": (
 			lambda a, not_found=None:
 			reduce(
@@ -214,7 +239,7 @@ def logic_decoder(rules, data=None):
 	return operations[ops](*values)
 
 
-def flatten(initial, key, resultant: dict, seperator=None):
+def flatten(initial, key, resultant: dict, separator=None):
 	"""
 	caution:
 	does not help to flatten the curve
@@ -222,17 +247,17 @@ def flatten(initial, key, resultant: dict, seperator=None):
 	:param initial:
 	:param key:
 	:param resultant:
-	:param seperator
+	:param separator
 	:return:
 	"""
 	
-	if not seperator:
-		seperator = '.'
+	if not separator:
+		separator = '.'
 	
 	if isinstance(initial, dict):
 		for k in initial:
-			n_key = f"{key}{seperator}{k}" if len(key) > 0 else k
-			flatten(initial[k], n_key, resultant, seperator)
+			n_key = f"{key}{separator}{k}" if len(key) > 0 else k
+			flatten(initial[k], n_key, resultant, separator)
 	else:
 		resultant[key] = initial
 	return resultant

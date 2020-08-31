@@ -70,18 +70,8 @@ def customized_function(**kwargs):
 	
 	# pull data from parent task(s)
 	task_data = task_instance.xcom_pull(key=None, task_ids=parent_tasks)
-	
-	if len(parent_tasks) == 1:
-		task_data = task_data[0]
-	
-	else:
-		temp_dict = dict()
-		
-		for index in range(len(task_data)):
-			if isinstance(task_data[index], dict):
-				temp_dict.update(task_data[index])
-		task_data = temp_dict
-	
+
+	task_data = dict_merge(task_data)
 	logging.info(f"Task Data\n {task_data}")
 	
 	# type check
