@@ -213,6 +213,7 @@ def logic_decoder(rules, data=None):
 		"?:": (lambda a, b, c: b if a else c),
 		"log": (lambda a: a if sys.stdout.write(str(a)) else a),
 		"in": lambda a, b: element_check(a, b),
+		"not_in": lambda a, b: True if not element_check(a, b) else False,
 		"regex": lambda a, b: regex_match(a, b),
 		"var": (
 			lambda a, not_found=None:
