@@ -160,6 +160,15 @@ def regex_match(a, b):
 		return False
 
 
+def element_check(a, b):
+	if isinstance(b, list):
+		return a in b
+	elif isinstance(a, list):
+		return b in a
+	else:
+		return a in b if "__contains__" in dir(b) else False
+
+
 def update_nested_dict(data, key, value):
 	for k, v in data.items():
 		if key == k:
@@ -203,7 +212,7 @@ def logic_decoder(rules, data=None):
 		"or": (lambda *args: reduce(lambda total, arg: total or arg, args, False)),
 		"?:": (lambda a, b, c: b if a else c),
 		"log": (lambda a: a if sys.stdout.write(str(a)) else a),
-		"in": (lambda a, b: a in b if "__contains__" in dir(b) else False),
+		"in": lambda a, b: element_check(a, b),
 		"regex": lambda a, b: regex_match(a, b),
 		"var": (
 			lambda a, not_found=None:
