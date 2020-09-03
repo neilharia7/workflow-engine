@@ -215,6 +215,10 @@ def logic_decoder(rules, data=None):
 		"in": lambda a, b: element_check(a, b),
 		"not_in": lambda a, b: True if not element_check(a, b) else False,
 		"regex": lambda a, b: regex_match(a, b),
+		"uppercase": lambda a: str(a).upper(),
+		"lowercase": lambda a: str(a).lower(),
+		"contains": lambda a, b: element_check(a, b),
+		"not_contains": lambda a, b: True if not element_check(a, b) else False,
 		"var": (
 			lambda a, not_found=None:
 			reduce(
