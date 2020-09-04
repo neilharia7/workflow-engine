@@ -70,7 +70,8 @@ def customized_function(**kwargs):
 	
 	# pull data from parent task(s)
 	task_data = task_instance.xcom_pull(key=None, task_ids=parent_tasks)
-
+	print(f"task_data {task_data}")
+	
 	task_data = dict_merge(task_data)
 	logging.info(f"Task Data\n {task_data}")
 	
@@ -177,6 +178,8 @@ def customized_function(**kwargs):
 					x_com_push_data['status'] = response.status_code
 					
 					kwargs['ti'].xcom_push(key='response', value=x_com_push_data)
+					
+					
 					return resp_data.get('next_task')
 				
 				except Exception as e:
@@ -200,19 +203,22 @@ def customized_function(**kwargs):
 			pass
 		
 		if len(queries) == 1:
+			"""
+			For single condition/query there will be only one output node, obviously!.
+			In this scenario, even if the condition fails the workflow will proceed with the result being stored
+			in the assinged in the `fields` variable at the time of workflow creation.
 			
+			P.S. not applicable in existing workflows.
+			"""
 			flag, data = format_query(task_data, queries[0])
+			if queries[0].get('field'):
+				data.update({queries[0].get('field'): flag})
 			
 			# save the data and proceed to subsequent task
 			kwargs['ti'].xcom_push(key='decision', value=data)
-			if flag:
-				# trigger subsequent task
-				return queries[0].get('result')
-			else:
-				# print("trigger task >> ", queries[0]['result'])
-				child_tasks.remove(queries[0].get('result'))
-				# return another result
-				return child_tasks[0]
+			
+			# TODO check if other workflows are being affected on this condition
+			return queries[0].get('result')
 		
 		else:
 			x_com_push_data = task_data

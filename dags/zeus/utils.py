@@ -48,7 +48,7 @@ def parses_to_integer(string):
 	if string:
 		try:
 			return int(float(string))
-		except ValueError:
+		except (ValueError, TypeError):
 			# print(e)
 			return string
 	else:
@@ -162,9 +162,9 @@ def regex_match(a, b):
 
 def element_check(a, b):
 	if isinstance(b, list):
-		return a in b
+		return str(a) in b
 	elif isinstance(a, list):
-		return b in a
+		return str(b) in a
 	else:
 		return a in b if "__contains__" in dir(b) else False
 
