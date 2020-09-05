@@ -6,8 +6,8 @@ from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator, BranchPythonOperator
 from tasks_functions.custom_functions import customized_function
-from zeus.utils import *
 from zeus.config import *
+from zeus.utils import *
 
 default_args = {
 	'owner': 'neilharia7',
@@ -86,6 +86,19 @@ def dynamic_task_creator(task_data: dict, __dag__: dict):
 		return PythonOperator(
 			task_id=task_data.get('task_name'),
 			provide_context=True,
+			python_callable=customized_function,
+			do_xcom_push=True,
+			trigger_rule="one_success",
+			templates_dict={
+				"task_info": task_data
+			},
+			dag=__dag__
+		)
+	
+	elif task_data.get('type') == "utilityDateConversion":
+		return PythonOperator(
+			task_id=task_data.get('task_name'),
+			provide_context=True,
 			python_callable=eval(task_data.get("transform_type")),
 			do_xcom_push=True,
 			trigger_rule="one_success",
@@ -136,6 +149,6 @@ if flag:
 						
 						if parent_info.get('task_name') in child_info.get('parent_task'):
 							task_register[child_idx] << task_register[task_len - parent_idx - 1]
-							
+			
 			# dynamic dag registration
 			globals()[dag_data.get('dag_id')] = dag

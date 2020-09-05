@@ -275,3 +275,18 @@ def flatten(initial, key, resultant: dict, separator=None):
 	else:
 		resultant[key] = initial
 	return resultant
+
+
+def convert_date_format(var: str, old_format: str, new_format: str):
+	"""
+	check if the date is input date is proper as user is always dumb
+	assuming old & new format dates are valid,
+	convert the date in the required format
+	"""
+	try:
+		datetime.strptime(var, old_format)
+	except ValueError as ve:
+		print(f"date format mismatch {ve}")
+		raise  # just `raising` instead of raise ValueError as traceback will be lost
+	
+	return datetime.strptime(var, old_format).strftime(new_format)

@@ -178,8 +178,6 @@ def customized_function(**kwargs):
 					x_com_push_data['status'] = response.status_code
 					
 					kwargs['ti'].xcom_push(key='response', value=x_com_push_data)
-					
-					
 					return resp_data.get('next_task')
 				
 				except Exception as e:
@@ -292,6 +290,31 @@ def customized_function(**kwargs):
 		print("termination response", response)
 		
 		return task_info.get('child_task')[0]
+	
+	elif task_info.get('type') == "utilityDateConversion":
+		
+		conversion_logic = task_info.get('conversion_logic', dict())
+		if conversion_logic:
+			"""
+			using construct_json to add date in the dictionary and converting the date
+			in the new format
+			"""
+			updated_logic = construct_json(conversion_logic, task_data)
+			
+			date_variable = updated_logic.get('var')
+			# None (default value) will throw error while converting and will provide a stack trace of the error
+			current_date_format = updated_logic.get('currentFormat', None)
+			new_date_format = updated_logic.get('expectedFormat', None)
+			
+			updated_date = convert_date_format(date_variable, current_date_format, new_date_format)
+			
+			# adding the converted date back to x_com to be used in consequent tasks
+			kwargs['ti'].xcom_push(key='decision', value={task_data.get('result'): updated_date})
+			
+			return task_info.get('child_task')[0]
+		
+		else:
+			raise Exception("conversion logic empty")
 	
 	elif task_info.get('task_name') in ['success', 'error']:
 		
