@@ -86,7 +86,7 @@ def dynamic_task_creator(task_data: dict, __dag__: dict):
 		return PythonOperator(
 			task_id=task_data.get('task_name'),
 			provide_context=True,
-			python_callable=customized_function,
+			python_callable=eval(task_data.get("transform_type")),
 			do_xcom_push=True,
 			trigger_rule="one_success",
 			templates_dict={
@@ -99,7 +99,7 @@ def dynamic_task_creator(task_data: dict, __dag__: dict):
 		return PythonOperator(
 			task_id=task_data.get('task_name'),
 			provide_context=True,
-			python_callable=eval(task_data.get("transform_type")),
+			python_callable=customized_function,
 			do_xcom_push=True,
 			trigger_rule="one_success",
 			templates_dict={
