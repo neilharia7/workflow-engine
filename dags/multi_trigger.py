@@ -27,7 +27,7 @@ def alert_samples(**context):
 	# currently defined specifically for sun_pharma POC
 	parameters = context['dag_run'].conf['params']
 	
-	url = "http://13.233.114.63:7070/poc/getConstraints"
+	url = "http://a78e1a873bab34503980b9c082cb9e41-62c6c349b3949474.elb.ap-south-1.amazonaws.com/v1/poc/getConstraints"
 	payload = {"path": parameters.get('path')}
 	headers = {"Content-Type": "application/json"}
 	response = requests.post(url, data=json.dumps(payload), headers=headers)
@@ -44,7 +44,7 @@ def trigger_loop(**context):
 	data = context['ti'].xcom_pull(key='data')
 	print(f"data >> {data}")
 	counter = 1
-	url = "http://13.233.114.63:7070/poc/fetchAlert"
+	url = "http://a78e1a873bab34503980b9c082cb9e41-62c6c349b3949474.elb.ap-south-1.amazonaws.com/v1/poc/fetchAlert"
 	payload = {"path": data.get('path')}
 	headers = {"Content-Type": "application/json"}
 	
@@ -64,7 +64,7 @@ def trigger_loop(**context):
 		resp['path'] = data.get('path')
 		resp['unique_id'] = unique_id
 		
-		url = "http://13.233.114.63:7070/workflow/trigger/sun_pharma_testing"
+		url = "http://a78e1a873bab34503980b9c082cb9e41-62c6c349b3949474.elb.ap-south-1.amazonaws.com/v1/workflow/trigger/sun_pharma_testing"
 		response = requests.post(url, data=json.dumps(resp), headers=headers)
 		
 		print(response)
