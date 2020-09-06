@@ -5,32 +5,6 @@ from functools import reduce
 import re
 
 
-# def datadog_success_event(context, **kwargs):
-# 	"""
-#
-# 	:param context:
-# 	:param kwargs:
-# 	:return:
-# 	"""
-# 	pass
-#
-#
-# def datadog_event(context, **kwargs):
-# 	"""
-#
-# 	:param context:
-# 	:param kwargs:
-# 	:return:
-# 	"""
-# 	dag_id = context['task_instance'].dag_id
-#
-#
-#
-# 	tag = [
-# 		f'dag_id:',
-# 	]
-
-
 def change_datetime(string, old_format, new_format):
 	try:
 		date_obj = datetime.strptime(string, old_format)

@@ -4,5 +4,10 @@
 ## Issues
 
 
-## TODOs
 
+## TODOs
+*   Documentation
+
+*   Distributed Processing
+    *   Priority (Medium)
+*   Code Refactoring
