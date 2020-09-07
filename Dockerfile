@@ -50,7 +50,9 @@ RUN     curl -L -o /usr/local/bin/kubectl \
         &&  chmod +x /usr/local/bin/kubectl
 
 COPY    ./dags ${AIRFLOW_HOME}/dags
-COPY    script/entrypoint.sh ${AIRFLOW_HOME}/entrypoint.sh
+# COPY    script/entrypoint.sh ${AIRFLOW_HOME}/entrypoint.sh
+
+COPY    script/entrypoint-postgres.sh ${AIRFLOW_HOME}/entrypoint.sh
 COPY    config/airflow.cfg ${AIRFLOW_HOME}/airflow.cfg
 
 RUN     mkdir ${AIRFLOW_HOME}/plugins

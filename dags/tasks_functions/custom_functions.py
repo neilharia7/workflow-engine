@@ -216,7 +216,7 @@ def customized_function(**kwargs):
 			kwargs['ti'].xcom_push(key='decision', value=data)
 			
 			# TODO check if other workflows are being affected on this condition
-			return queries[0].get('result')
+			return task_info.get('child_task')[0]
 		
 		else:
 			x_com_push_data = task_data
