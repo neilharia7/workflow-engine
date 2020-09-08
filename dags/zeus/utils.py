@@ -143,16 +143,23 @@ def element_check(a, b):
 		return a in b if "__contains__" in dir(b) else False
 
 
-def update_nested_dict(data, key, value):
+def update_nested_dict(data, key, value, skip_keys):
 	for k, v in data.items():
-		if key == k:
-			data[k] = parses_to_integer(value)
-		elif isinstance(v, dict):
-			update_nested_dict(v, key, value)
-		elif isinstance(v, list):
-			for o in v:
-				if isinstance(o, dict):
-					update_nested_dict(o, key, value)
+		
+		# skip data in status codes e.g. 200: {}
+		"""
+		TODO more info to be added
+		Problem it overwrites the data completely, hence the check
+		"""
+		if k not in skip_keys and not str(key).isdigit():
+			if key == k:
+				data[k] = parses_to_integer(value)
+			elif isinstance(v, dict):
+				update_nested_dict(v, key, value, skip_keys)
+			elif isinstance(v, list):
+				for o in v:
+					if isinstance(o, dict):
+						update_nested_dict(o, key, value, skip_keys)
 	return data
 
 

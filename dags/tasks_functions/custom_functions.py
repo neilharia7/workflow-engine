@@ -37,16 +37,24 @@ def format_query(task_data, query):
 	rule = query.get('rule')
 	data = query.get('data')
 	
+	# to prevent overwriting of data
+	skip_keys = list()
+	
 	for key, val in task_data.items():
-		data = update_nested_dict(data, key, val)
+		data = update_nested_dict(data, key, val, skip_keys)
+		skip_keys.append(key)
 		data.update(data)
 	
 	print(data)
-	data.update(task_data)
+	
+	# removing task_data update as it doesn't make sense to create a copy of data
+	# unnecessary redundancy removed
+	# data.update(task_data)
 	
 	print("formatted data", data)
 	
 	flag = logic_decoder(rule, data)
+	
 	print("result >> ", flag)
 	return flag, data
 
