@@ -193,6 +193,7 @@ def logic_decoder(rules, data=None):
 		"or": (lambda *args: reduce(lambda total, arg: total or arg, args, False)),
 		"?:": (lambda a, b, c: b if a else c),
 		"log": (lambda a: a if sys.stdout.write(str(a)) else a),
+		"!!": (lambda a: False if a is None else True),
 		"in": lambda a, b: element_check(a, b),
 		"not_in": lambda a, b: True if not element_check(a, b) else False,
 		"regex": lambda a, b: regex_match(a, b),

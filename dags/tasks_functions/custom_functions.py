@@ -222,23 +222,19 @@ def customized_function(**kwargs):
 			P.S. not applicable in existing workflows.
 			"""
 			flag, data = format_query(task_data, queries[0])
-			if queries[0].get('field'):
-				task_data.update({queries[0].get('field'): flag})
+			if queries[0].get('fields'):
+				task_data.update({queries[0].get('fields'): flag})
 				
 			# save the data and proceed to subsequent task
 			kwargs['ti'].xcom_push(key='decision', value=task_data)
 			
-			# TODO check if other workflows are being affected on this condition
 			return task_info.get('child_task')[0]
 		
 		else:
-			x_com_push_data = task_data
 			for index, query in enumerate(queries):
 				
 				flag, data = format_query(task_data, query)
 				
-				# # save the data and proceed to subsequent task
-				# x_com_push_data.update(data)
 				if query.get('field'):
 					task_data.update({query.get('field'): flag})
 				
