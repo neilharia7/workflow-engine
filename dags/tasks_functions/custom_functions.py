@@ -11,9 +11,9 @@ def request_formatter(request_json: dict) -> dict:
 	format ->
 
 	{
-		"key": {
-			"type": "<static / map  >",
-			"value": "<value>"
+			"key": {
+					"type": "<static / map  >",
+					"value": "<value>"
 	}
 
 
@@ -126,7 +126,7 @@ def customized_function(**kwargs):
 			
 			# removes the {} from the url and appends the value to the url
 			url = url.split("{")[0] + [val for key, val in params.items()][0]
-			
+		
 		try:
 			# if passed through API, override
 			user_input = kwargs['dag_run'].conf['request']['params']
@@ -218,36 +218,39 @@ def customized_function(**kwargs):
 			For single condition/query there will be only one output node, obviously!.
 			In this scenario, even if the condition fails the workflow will proceed with the result being stored
 			in the assinged in the `fields` variable at the time of workflow creation.
-			
+
 			P.S. not applicable in existing workflows.
 			"""
 			flag, data = format_query(task_data, queries[0])
 			if queries[0].get('field'):
-				data.update({queries[0].get('field'): flag})
-			
+				task_data.update({queries[0].get('field'): flag})
+				
 			# save the data and proceed to subsequent task
-			kwargs['ti'].xcom_push(key='decision', value=data)
+			kwargs['ti'].xcom_push(key='decision', value=task_data)
 			
 			# TODO check if other workflows are being affected on this condition
 			return task_info.get('child_task')[0]
 		
 		else:
 			x_com_push_data = task_data
-			for query in queries:
+			for index, query in enumerate(queries):
 				
 				flag, data = format_query(task_data, query)
 				
-				# save the data and proceed to subsequent task
-				x_com_push_data.update(data)
+				# # save the data and proceed to subsequent task
+				# x_com_push_data.update(data)
+				if query.get('field'):
+					task_data.update({query.get('field'): flag})
 				
 				if flag:
-					kwargs['ti'].xcom_push(key='decision', value=x_com_push_data)
+					kwargs['ti'].xcom_push(key='decision', value=task_data)
 					# trigger subsequent task
 					return query.get('result')
 				else:
 					result_task.append(query.get('result'))
 			
-			kwargs['ti'].xcom_push(key='decision', value=x_com_push_data)
+			# todo check if existing dags are not broker
+			kwargs['ti'].xcom_push(key='decision', value=task_data)
 			return list(set(child_tasks) - set(result_task))[0]
 	
 	elif task_info.get('type') in ["webhook_success", "webhook_reject"]:
@@ -321,8 +324,9 @@ def customized_function(**kwargs):
 			
 			updated_date = convert_date_format(date_variable, current_date_format, new_date_format)
 			
+			task_data.update({task_data.get('result'): updated_date})
 			# adding the converted date back to x_com to be used in consequent tasks
-			kwargs['ti'].xcom_push(key='decision', value={task_data.get('result'): updated_date})
+			kwargs['ti'].xcom_push(key='decision', value=task_data)
 			
 			return task_info.get('child_task')[0]
 		

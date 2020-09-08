@@ -5,7 +5,7 @@ pipeline {
 		ECR = "740186269845.dkr.ecr.ap-south-1.amazonaws.com/flowxpert-engine"
 		BUILD_IMAGE = "engine:latest"
 		LATEST_IMAGE = "${env.ECR}:latest"
-		IP = "13.233.167.121"
+		IP = "13.235.34.180"
 		USERNAME = "ec2-user"
 	}
 
