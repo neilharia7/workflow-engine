@@ -174,10 +174,11 @@ def customized_function(**kwargs):
 					print("response >> ", response.text)
 					x_com_push_data = json.loads(response.text)
 					x_com_push_data.update(task_data)
-					print(f"xCom >> {x_com_push_data}")
 					x_com_push_data['status'] = response.status_code
 					
-					kwargs['ti'].xcom_push(key='response', value=x_com_push_data)
+					kwargs['ti'].xcom_push(key=task_info.get('task_name'), value=x_com_push_data)
+					print("data in xcom")
+					print(task_instance.xcom_pull(key=None, task_ids=task_info.get('task_name')))
 					return resp_data.get('next_task')
 				
 				except Exception as e:
