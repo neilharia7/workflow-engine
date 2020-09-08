@@ -176,9 +176,13 @@ def customized_function(**kwargs):
 					x_com_push_data.update(task_data)
 					x_com_push_data['status'] = response.status_code
 					
-					kwargs['ti'].xcom_push(key=task_info.get('task_name'), value=x_com_push_data)
-					print("data in xcom")
-					print(task_instance.xcom_pull(key=None, task_ids=task_info.get('task_name')))
+					print(task_info.get('task_name'))
+					# TODO
+					"""
+					cannot pass directly the task name as key because the same cannot be used due to
+					skipmixin (need to dig deeper)
+					"""
+					kwargs['ti'].xcom_push(key='response', value=x_com_push_data)
 					return resp_data.get('next_task')
 				
 				except Exception as e:
