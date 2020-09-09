@@ -223,7 +223,9 @@ def customized_function(**kwargs):
 			"""
 			flag, data = format_query(task_data, queries[0])
 			if queries[0].get('fields'):
-				task_data.update({queries[0].get('fields'): flag})
+				key = [k for k, v in queries[0].get('fields').items()][0]
+				priny(key)
+				task_data.update({key: flag})
 				
 			# save the data and proceed to subsequent task
 			kwargs['ti'].xcom_push(key='decision', value=task_data)
@@ -235,8 +237,10 @@ def customized_function(**kwargs):
 				
 				flag, data = format_query(task_data, query)
 				
-				if query.get('field'):
-					task_data.update({query.get('field'): flag})
+				if query.get('fields'):
+					key = [k for k, v in query.get('fields').items()][0]
+					priny(key)
+					task_data.update({query.get('fields'): flag})
 				
 				if flag:
 					kwargs['ti'].xcom_push(key='decision', value=task_data)
