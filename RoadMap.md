@@ -7,7 +7,11 @@
 
 ## TODOs
 *   Documentation
-
-*   Distributed Processing
+*   Scalability & Load testing (EKS <> helm-chart)
     *   Priority (Medium)
-*   Code Refactoring
+*   Code Refactoring & Documentation
+*   Deployment porting from `EKS` to `kops`
+*   Unit testing in CI-CD
+    *   Priority (Low)
+*   Logging & Monitoring
+    *   Priority (Medium)

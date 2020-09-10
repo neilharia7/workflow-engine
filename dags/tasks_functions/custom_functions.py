@@ -269,7 +269,7 @@ def customized_function(**kwargs):
 			task_data.update(user_input)
 		
 		except Exception as e:
-			pass
+			print(e)
 		
 		# remove redundant keys
 		cleanup = list()
