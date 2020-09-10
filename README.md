@@ -180,7 +180,6 @@ Port-Forward the service of webserver to access the application
 
 #### Helm Deployment 
 >   Deployment recommended via CI-CD pipeline
--   under development
 
 Ensure your helm installation is done, and enter the following command
 
@@ -188,11 +187,14 @@ Ensure your helm installation is done, and enter the following command
 
 Follow the `notes` generated at the end of helm deployment for more instructions
 
-## Release History
+## Releases
 >   Contains all the git tag releases/issue fixes
 
+>   [Releases](https://bitbucket.org/team360noscope/airflow-experimental/src/master/ReleaseHistory.md)
+
 ## Roadmap
->   Coming Soon..
+
+> [RoadMap](https://bitbucket.org/team360noscope/airflow-experimental/src/master/RoadMap.md) contains all the `Issues` & `TODOs`
 
 ## Contribution Guidelines
 -   Fork
