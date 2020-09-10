@@ -190,7 +190,7 @@ Follow the `notes` generated at the end of helm deployment for more instructions
 ## Releases
 >   Contains all the git tag releases/issue fixes
 
->   [Releases](https://bitbucket.org/team360noscope/airflow-experimental/src/master/ReleaseHistory.md)
+>   [Releases](https://bitbucket.org/team360noscope/airflow-experimental/src/master/Releases.md)
 
 ## Roadmap
 
