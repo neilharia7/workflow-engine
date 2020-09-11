@@ -104,7 +104,7 @@ def dynamic_task_composer(task_data: dict, __dag__: dict):
 			dag=__dag__
 		)
 	
-	elif task_data.get('type') == ["api", "decision"]:
+	elif task_data.get('type') in ["api", "decision"]:
 		
 		if number_of_keys(task_data.get('child_task')):
 			# Branch operator as the task contains more than one child nodes

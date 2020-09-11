@@ -252,7 +252,6 @@ def customized_function(**kwargs):
 			kwargs['ti'].xcom_push(key=run_id, value=task_data)
 			return list(set(child_tasks) - set(result_task))[0]
 	
-	
 	elif task_info.get('type') in ["webhook_success", "webhook_reject"]:  # under construction
 		return task_info.get('child_task')[0]
 	
