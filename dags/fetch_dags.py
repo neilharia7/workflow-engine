@@ -204,7 +204,7 @@ if flag:
 			# reverse mapping
 			data_list = dag_data.get('data', list())[::-1]
 			
-			task_register = [dynamic_task_creator(task_data, dag) for task_data in data_list]
+			task_register = [dynamic_task_composer(task_data, dag) for task_data in data_list]
 			reverse_dict = {"data": data_list}
 			
 			task_len = len(task_register)
