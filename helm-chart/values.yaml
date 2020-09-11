@@ -161,7 +161,10 @@ scheduler:
   livenessProbe:
     initialDelaySeconds: 20
     timeoutSeconds: 30
-    failureThreshold: 30
+    # number of times scheduler is allowed to fail
+    # If the scheduler stops heartbeating for 90 seconds (3 * 30), 30 being the period sec. kill the scheduler
+    # and let k8s restart it
+    failureThreshold: 3  # fail early, fail fast...
     periodSeconds: 30
 
   resources: {}
