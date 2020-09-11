@@ -5,112 +5,112 @@ import requests
 from zeus.utils import *
 
 
-# TODO refactor the structure completely following DRY
-def request_formatter(request_json: dict) -> dict:
+def request_formatter(request_json: dict):
 	"""
-	format ->
-
+	static -> value being predefined
+	map -> value needed to be picked up usually from the parent task(s) (available in xcom)
+	Sample request format:
 	{
-			"key": {
-					"type": "<static / map  >",
-					"value": "<value>"
+		"key": {
+			"type": "<static / map  >",
+			"value": "<value>"
 	}
-
 
 	:param request_json:
 	:return:
 	"""
-	
-	for key, val in request_json.items():
-		request_json[key] = val.get('value')
+	for key, value in request_json.items():
+		request_json[key] = value.get('value')
 	return request_json
 
 
-def format_query(task_data, query):
+def format_query(task_data: dict, query: dict):
 	"""
 
 	:param task_data:
-	:param query:
+	:param query: contains business rule, data, & result field (in which the result of the logic will be stored)
 	:return:
 	"""
 	
 	rule = query.get('rule')
 	data = query.get('data')
 	
-	# to prevent overwriting of data
+	# to prevent overwriting of updated data
 	skip_keys = list()
 	
-	for key, val in task_data.items():
-		data = update_nested_dict(data, key, val, skip_keys)
+	for key, value in task_data.items():
+		data = update_nested_dict(data, key, value, skip_keys)
 		skip_keys.append(key)
 		data.update(data)
 	
-	print(data)
-	
-	# removing task_data update as it doesn't make sense to create a copy of data
-	# unnecessary redundancy removed
-	# data.update(task_data)
-	
 	print("formatted data", data)
 	
+	# get the result of the logic
 	flag = logic_decoder(rule, data)
-	
-	print("result >> ", flag)
-	return flag, data
+	print(f"rule {rule}")
+	print(f"query result >> {flag}")
+	return flag
 
 
 def customized_function(**kwargs):
 	"""
 
-	:param kwargs:
+	:param kwargs: complete information of the DAG i.e. workflow
 	:return:
 	"""
 	
-	# get all the task information
+	# get all the information about the task
 	task_info = kwargs.get('templates_dict').get('task_info', None)
 	logging.info(f"Task Information\n {task_info}")
 	
-	task_instance = kwargs['ti']  # getting instance of task
+	# getting instance of task
+	task_instance = kwargs['ti']
+	
+	# get the unique run_id (uuid generated at the time of dag execution call)
+	run_id = kwargs['dag_run'].conf['run_id']
 	
 	# get all the parents of this task
 	parent_tasks = task_info.get('parent_task', str())
 	logging.info(f"Parent Tasks\n {parent_tasks}")
 	
-	# pull data from parent task(s)
-	task_data = task_instance.xcom_pull(key=None, task_ids=parent_tasks)
-	print(f"task_data {task_data}")
-	
-	task_data = dict_merge(task_data)
-	logging.info(f"Task Data\n {task_data}")
-	
-	# type check
+	# type of the task node
 	if task_info.get('type') == "start":
-		# get fields to be pushed in xcom
-		fields = task_info.get('fields')  # dict mostly
+		
+		# pull data from parent task(s), at the start key will be None
+		task_data = task_instance.xcom_pull(key=None, task_ids=parent_tasks)
+		task_data = dict_merge(task_data)
+		print(f"task_data {task_data}")
+		
+		# get the fields to be pushed in the xcom
+		fields = task_info.get('field', dict())
 		
 		try:
 			# if passed through API, override
 			fields = kwargs['dag_run'].conf['request']['params']
+			print(f"fields >> {fields}")
 			
 			# format key value type in input dict
 			for key, val in fields.items():
 				if val:
 					fields[key] = parses_to_integer(val)
-		
 		except Exception as e:
 			logging.error(f"User Input Exception >> {e}")
 		
 		print("fields >> ", fields)
-		# save variables for future use
-		kwargs['ti'].xcom_push(key='start', value=fields)
+		# save data -> will be used in subsequent task
+		kwargs['ti'].xcom_push(key=run_id, value=fields)
 	
 	elif task_info.get('type') == "api":  # transform_type, input & output keys will be empty
-		
 		request = task_info.get('request', dict())  # empty dict if no request in case of GET method
 		method = task_info.get('method')
 		params = task_info.get('params', dict())
 		url = task_info.get('url')
 		headers = task_info.get('headers', dict())
+		
+		# pull data from parent task(s)
+		task_data = task_instance.xcom_pull(key=run_id, task_ids=parent_tasks)
+		task_data = dict_merge(task_data)
+		print(f"task data >> {task_data}")
 		
 		# static, dynamic header mapping check
 		# TODO add mapping functionality
@@ -118,7 +118,7 @@ def customized_function(**kwargs):
 			if isinstance(value, dict) and value.get('type') and value.get('type') == "static":
 				headers[key] = value.get("value")
 		
-		# TODO format the structure in classes -> production level code not adhoc
+		# for GET method
 		if params:
 			for key, value in params.items():
 				if isinstance(value, dict) and value.get('type') and value.get('type') == "static":
@@ -133,7 +133,6 @@ def customized_function(**kwargs):
 			
 			logging.info(f'User Input {user_input}')
 			if isinstance(user_input, dict):
-				
 				# format key value type in input dict
 				for key, val in user_input.items():
 					user_input[key] = parses_to_integer(val)
@@ -154,11 +153,13 @@ def customized_function(**kwargs):
 		print(f'request >> {request}')
 		payload = construct_json(request, task_data)
 		print(f'payload\n{payload}')
+		
 		if method == "GET":
 			response = requests.get(url=url, headers=headers)
 		else:
 			# check if the data is needed to be passed in form-type or json
-			if task_info.get('send_type', '') == 'form-data':  # TODO key not present in current request format
+			# TODO key not present in current request format
+			if task_info.get('send_type', '') == 'form-data':
 				response = requests.post(url=url, headers=headers, data=payload)
 			else:  # json
 				response = requests.post(url=url, headers=headers, json=payload)
@@ -171,7 +172,6 @@ def customized_function(**kwargs):
 				
 				# check if all keys are present as expected in response
 				try:
-					
 					# future case
 					# if set(json.loads(response.text)) == set(resp_data):
 					# 	# save the response and proceed to subsequent task
@@ -182,22 +182,21 @@ def customized_function(**kwargs):
 					print("response >> ", response.text)
 					x_com_push_data = json.loads(response.text)
 					x_com_push_data.update(task_data)
+					print(f"xCom >> {x_com_push_data}")
 					x_com_push_data['status'] = response.status_code
 					
-					print(task_info.get('task_name'))
-					# TODO
-					"""
-					cannot pass directly the task name as key because the same cannot be used due to
-					skipmixin (need to dig deeper)
-					"""
-					kwargs['ti'].xcom_push(key='response', value=x_com_push_data)
+					kwargs['ti'].xcom_push(key=run_id, value=x_com_push_data)
 					return resp_data.get('next_task')
 				
 				except Exception as e:
 					logging.error(f"Response Exception >> {e}")
-					raise Exception(e)
+					raise
 	
-	elif task_info.get('type') == "decision":
+	elif task_info.get('type') == "decision":  # task containing all the business logic
+		
+		# pull data from parent task(s)
+		task_data = task_instance.xcom_pull(key=run_id, task_ids=parent_tasks)
+		task_data = dict_merge(task_data)
 		
 		# get the defined logic
 		queries = task_info.get('query_logic')  # list
@@ -205,13 +204,13 @@ def customized_function(**kwargs):
 		# check if decision has multiple rules
 		# number of outputs will be (no of queries) + 1 (reject scenario)
 		
-		result_task = []
+		result_task = list()
 		child_tasks = task_info.get('child_task')
-		
 		try:
+			# removing looping condition
 			child_tasks.remove(task_info.get('task_name'))
 		except Exception as e:
-			pass
+			logging.info(f'ignoring >>{e}')
 		
 		if len(queries) == 1:
 			"""
@@ -221,42 +220,47 @@ def customized_function(**kwargs):
 
 			P.S. not applicable in existing workflows.
 			"""
-			flag, data = format_query(task_data, queries[0])
+			flag = format_query(task_data, queries[0])
 			if queries[0].get('fields'):
 				key = [k for k, v in queries[0].get('fields').items()][0]
-				priny(key)
+				print(key)
 				task_data.update({key: flag})
-				
+			
 			# save the data and proceed to subsequent task
-			kwargs['ti'].xcom_push(key='decision', value=task_data)
+			kwargs['ti'].xcom_push(key=run_id, value=task_data)
 			
 			return task_info.get('child_task')[0]
 		
 		else:
 			for index, query in enumerate(queries):
 				
-				flag, data = format_query(task_data, query)
+				flag = format_query(task_data, query)
 				
+				# limitations -> only a single key will be updated
 				if query.get('fields'):
 					key = [k for k, v in query.get('fields').items()][0]
-					priny(key)
-					task_data.update({query.get('fields'): flag})
+					task_data.update({key: flag})
 				
 				if flag:
-					kwargs['ti'].xcom_push(key='decision', value=task_data)
+					kwargs['ti'].xcom_push(key=run_id, value=task_data)
 					# trigger subsequent task
 					return query.get('result')
 				else:
 					result_task.append(query.get('result'))
 			
-			# todo check if existing dags are not broker
-			kwargs['ti'].xcom_push(key='decision', value=task_data)
+			# todo check if existing dags are not broken
+			kwargs['ti'].xcom_push(key=run_id, value=task_data)
 			return list(set(child_tasks) - set(result_task))[0]
 	
-	elif task_info.get('type') in ["webhook_success", "webhook_reject"]:
+	
+	elif task_info.get('type') in ["webhook_success", "webhook_reject"]:  # under construction
 		return task_info.get('child_task')[0]
 	
 	elif task_info.get('type') == "termination":
+		# pull data from parent task(s)
+		task_data = task_instance.xcom_pull(key=run_id, task_ids=parent_tasks)
+		task_data = dict_merge(task_data)
+		
 		# get the body
 		request_structure = task_info.get('response', dict())
 		url = task_info.get('url', '')
@@ -308,32 +312,39 @@ def customized_function(**kwargs):
 		return task_info.get('child_task')[0]
 	
 	elif task_info.get('type') == "utilityDateConversion":
+		# pull data from parent task(s)
+		task_data = task_instance.xcom_pull(key=run_id, task_ids=parent_tasks)
+		task_data = dict_merge(task_data)
 		
+		print(f"task data >> {task_data}")
+		
+		# conversion logic => None?
+		# DAG fails
 		conversion_logic = task_info.get('conversion_logic', dict())
-		if conversion_logic:
-			"""
-			using construct_json to add date in the dictionary and converting the date
-			in the new format
-			"""
-			updated_logic = construct_json(conversion_logic, task_data)
-			
-			date_variable = updated_logic.get('var')
-			# None (default value) will throw error while converting and will provide a stack trace of the error
-			current_date_format = updated_logic.get('currentFormat', None)
-			new_date_format = updated_logic.get('expectedFormat', None)
-			
-			updated_date = convert_date_format(date_variable, current_date_format, new_date_format)
-			
-			task_data.update({task_data.get('result'): updated_date})
-			# adding the converted date back to x_com to be used in consequent tasks
-			kwargs['ti'].xcom_push(key='decision', value=task_data)
-			
-			return task_info.get('child_task')[0]
 		
-		else:
-			raise Exception("conversion logic empty")
+		"""
+		using construct_json to add date in the dictionary and converting the date
+		in the new format
+		"""
+		updated_logic = construct_json(conversion_logic, task_data)
+		
+		date_variable = updated_logic.get('var')
+		
+		# None (default value) will throw error while converting and will provide a stack trace of the error
+		current_date_format = updated_logic.get('currentFormat', None)
+		new_date_format = updated_logic.get('expectedFormat', None)
+		
+		print(f"updated_logic >> {updated_logic}")
+		updated_date = convert_date_format(date_variable, current_date_format, new_date_format)
+		
+		alias = [key for key, value in task_data.get('result')][0]
+		task_data.update({alias: updated_date})
+		# adding the converted date back to x_com to be used in consequent tasks
+		kwargs['ti'].xcom_push(key=run_id, value=task_data)
+		
+		return task_info.get('child_task')[0]
 	
-	elif task_info.get('task_name') in ['success', 'error']:
+	elif task_info.get('task_name') in ['success', 'error']:  # under construction
 		
 		url = task_info.get('url', '')
 		headers = task_info.get('headers', {"Content-Type": "application/json"})
