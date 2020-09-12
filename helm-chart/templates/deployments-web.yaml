@@ -21,7 +21,7 @@ spec:
         release: {{ .Release.Name }}
     spec:
       restartPolicy: Always
-      terminationGracePeriodSeconds: 10
+      terminationGracePeriodSeconds: 20
       imagePullSecrets:
         - name: {{ .Values.secrets.name }}
       containers:

@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: Dea
 metadata:
   name: {{ template "airflow.fullname" . }}-scheduler
   labels:
@@ -8,12 +8,12 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-  replicas: 1
+  replicas: 2
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 1
+      maxSurge: 25%
+      maxUnavailable: 25%
   selector:
     matchLabels:
       app: {{ template "airflow.name" . }}-scheduler
@@ -24,7 +24,7 @@ spec:
         release: {{ .Release.Name }}
     spec:
       restartPolicy: Always
-      terminationGracePeriodSeconds: 10
+      terminationGracePeriodSeconds: 20
       imagePullSecrets:
         - name: {{ .Values.secrets.name }}
       containers:

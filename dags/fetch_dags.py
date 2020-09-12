@@ -106,7 +106,7 @@ def dynamic_task_composer(task_data: dict, __dag__: dict):
 	
 	elif task_data.get('type') in ["api", "decision"]:
 		
-		if number_of_keys(task_data.get('child_task')):
+		if number_of_keys(task_data.get('child_task', list())):
 			# Branch operator as the task contains more than one child nodes
 			return BranchPythonOperator(
 				task_id=task_data.get('task_name'),
@@ -122,17 +122,30 @@ def dynamic_task_composer(task_data: dict, __dag__: dict):
 				dag=__dag__
 			)
 		
-		return PythonOperator(
-			task_id=task_data.get('task_name'),
-			provide_context=True,
-			python_callable=customized_function,
-			trigger_rule="all_done",  # this may have cause a limitation considering dynamic DAGs is being created
-			op_kwargs=task_data.get('request'),
-			depends_on_past=True,
-			templates_dict={"task_info": task_data},
-			do_xcom_push=True,
-			dag=__dag__
-		)
+		elif 'end' in task_data.get('child_task', list()):
+			return PythonOperator(
+				task_id=task_data.get('task_name'),
+				provide_context=True,
+				python_callable=customized_function,
+				trigger_rule="none_failed",
+				op_kwargs=task_data.get('request'),
+				templates_dict={"task_info": task_data},
+				do_xcom_push=True,
+				dag=__dag__
+			)
+		
+		else:
+			return PythonOperator(
+				task_id=task_data.get('task_name'),
+				provide_context=True,
+				python_callable=customized_function,
+				trigger_rule="one_success",  # this may be a concern considering dynamic DAGs is being created
+				op_kwargs=task_data.get('request'),
+				depends_on_past=True,
+				templates_dict={"task_info": task_data},
+				do_xcom_push=True,
+				dag=__dag__
+			)
 	
 	elif task_data.get('type') == 'utility':
 		# task related to all the data transformations (i.e. concat, split (upcoming.. ))

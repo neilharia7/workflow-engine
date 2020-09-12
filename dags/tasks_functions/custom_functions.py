@@ -82,7 +82,8 @@ def customized_function(**kwargs):
 		print(f"task_data {task_data}")
 		
 		# get the fields to be pushed in the xcom
-		fields = task_info.get('field', dict())
+		fields = task_info.get('fields', dict())
+		print(f"starting data >> {fields}")
 		
 		try:
 			# if passed through API, override
