@@ -227,13 +227,13 @@ flower:
   livenessProbe:
     initialDelaySeconds: 15
     timeoutSeconds: 30
-    failureThreshold: 20
+    failureThreshold: 10
     periodSeconds: 5
 
   readinessProbe:
     initialDelaySeconds: 15
     timeoutSeconds: 30
-    failureThreshold: 20
+    failureThreshold: 10
     periodSeconds: 5
 
   env:

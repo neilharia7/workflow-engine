@@ -1,6 +1,9 @@
 # Releases
 
-## v1.0.10 (Latest build)
+
+## v1.0.11 (Latest build)
+``
+## v1.0.10 
 ### Changes
 
 *   2020-09-07 
