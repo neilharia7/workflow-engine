@@ -144,7 +144,7 @@ workers:
 #      memory: 256Mi
 
   # Grace period for tasks to finish after SIGTERM is sent from kubernetes
-  terminationGracePeriodSeconds: 600
+  terminationGracePeriodSeconds: 300
 
   # Apply a HorizontalPodAutoscaler  # TODO future
   autoscaling:
