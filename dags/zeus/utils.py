@@ -201,6 +201,7 @@ def logic_decoder(rules, data=None):
 		"lowercase": lambda a: str(a).lower(),
 		"contains": lambda a, b: element_check(a, b),
 		"not_contains": lambda a, b: True if not element_check(a, b) else False,
+		"contains_mix_chars": lambda a: True if (str(a) != str(a).lower() and str(a) != str(a).upper()) else False,
 		"var": (
 			lambda a, not_found=None:
 			reduce(
