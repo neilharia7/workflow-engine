@@ -311,6 +311,33 @@ def customized_function(**kwargs):
 		
 		return task_info.get('child_task')[0]
 	
+	elif task_info.get('type') == "utilitySplitString":
+		# pull data from parent task(s)
+		task_data = task_instance.xcom_pull(key=run_id, task_ids=parent_tasks)
+		task_data = dict_merge(task_data)
+		
+		# split logic => None?
+		# DAG fails
+		split_logic = task_info.get('split_logic', dict())
+		
+		"""
+		using construct_json to pick value of the element to be split into sub-sections
+		"""
+		data_variable = {'var': split_logic.get('var')}
+		data_variable = construct_json(data_variable, task_data)
+		aliases = split_logic.get('aliases', list())
+		
+		# variables containing sliced values of original element value
+		updated_aliases = dict()
+		position = 0
+		for alias in aliases:
+			updated_aliases[alias['aliasName']] = str(data_variable['var'])[position: position + int(alias['length'])]
+			position += int(alias['length'])
+		
+		task_data.update(updated_aliases)
+		# adding the converted date back to x_com to be used in consequent tasks
+		kwargs['ti'].xcom_push(key=run_id, value=task_data)
+	
 	elif task_info.get('type') == "utilityDateConversion":
 		# pull data from parent task(s)
 		task_data = task_instance.xcom_pull(key=run_id, task_ids=parent_tasks)
