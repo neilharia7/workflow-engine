@@ -160,7 +160,7 @@ def dynamic_task_composer(task_data: dict, __dag__: dict):
 			dag=__dag__
 		)
 	
-	elif task_data.get("type") == "utilityDateConversion":
+	elif task_data.get("type") in ["utilityDateConversion", "utilitySplitString"]:
 		
 		return PythonOperator(
 			task_id=task_data.get('task_name'),
