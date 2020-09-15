@@ -6,12 +6,16 @@
 
 
 ## TODOs
-*   Documentation
-*   Scalability & Load testing (EKS <> helm-chart)
+*   Scalability & Load testing (EKS <> Helm-Charts)
+    *   In - progress
     *   Priority (Medium)
+    
 *   Code Refactoring & Documentation
+
 *   Deployment porting from `EKS` to `kops`
-*   Unit testing in CI-CD
+
+*   CI-CD Unit Testing
     *   Priority (Low)
+    
 *   Logging & Monitoring
     *   Priority (Medium)
