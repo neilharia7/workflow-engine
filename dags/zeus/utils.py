@@ -267,9 +267,9 @@ def convert_date_format(var: str, old_format: str, new_format: str):
 	convert the date in the required format
 	"""
 	try:
-		datetime.strptime(var, old_format)
-	except ValueError as ve:
-		print(f"date format mismatch {ve}")
+		datetime.strptime(str(var), old_format)
+	except (TypeError, ValueError) as e:
+		print(f"date format mismatch {e}")
 		raise  # just `raising` instead of raise ValueError as traceback will be lost
 	
-	return datetime.strptime(var, old_format).strftime(new_format)
+	return datetime.strptime(str(var), old_format).strftime(new_format)

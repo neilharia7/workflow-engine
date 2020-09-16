@@ -30,5 +30,6 @@ logs/
 .idea/
 
 venv/
+env/
 
 pgdata/
