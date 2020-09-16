@@ -123,11 +123,14 @@ def dynamic_task_composer(task_data: dict, __dag__: dict):
 			)
 		
 		elif 'end' in task_data.get('child_task', list()):
+			
+			# Its a redundancy code, but I forgot why I seperated it in the first place,
+			# also, if it works, don't touch!.
 			return PythonOperator(
 				task_id=task_data.get('task_name'),
 				provide_context=True,
 				python_callable=customized_function,
-				trigger_rule="none_skipped",
+				trigger_rule="one_success",
 				depends_on_past=True,
 				op_kwargs=task_data.get('request'),
 				templates_dict={"task_info": task_data},

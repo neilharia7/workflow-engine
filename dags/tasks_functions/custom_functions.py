@@ -364,7 +364,8 @@ def customized_function(**kwargs):
 		print(f"updated_logic >> {updated_logic}")
 		updated_date = convert_date_format(date_variable, current_date_format, new_date_format)
 		
-		alias = [key for key, value in task_data.get('result')][0]
+		alias = [key for key, value in task_info.get('result').items()][0]
+		print("date converted result >> ", str({alias: updated_date}))
 		task_data.update({alias: updated_date})
 		# adding the converted date back to x_com to be used in consequent tasks
 		kwargs['ti'].xcom_push(key=run_id, value=task_data)

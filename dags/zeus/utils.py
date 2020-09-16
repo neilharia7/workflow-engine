@@ -121,14 +121,15 @@ def concat(**kwargs):
 
 def regex_match(a, b):
 	"""
-
+	never assume!.
+	
 	:param a: object
 	:param b: regex string (assumption)
 	:return:
 	"""
 
 	try:
-		return True if re.match(r'{}'.format(b), a) else False
+		return True if re.match(r'{}'.format(b), str(a)) else False
 	except TypeError as te:
 		print(f"regex match fail >> {te}")
 		return False
@@ -202,6 +203,7 @@ def logic_decoder(rules, data=None):
 		"contains": lambda a, b: element_check(a, b),
 		"not_contains": lambda a, b: True if not element_check(a, b) else False,
 		"contains_mix_char": lambda a: True if (str(a) != str(a).lower() and str(a) != str(a).upper()) else False,
+		"contains_upper_char": lambda a: True if (str(a) == str(a).upper()) else False,
 		"var": (
 			lambda a, not_found=None:
 			reduce(
