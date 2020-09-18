@@ -39,8 +39,10 @@ Please visit the Airflow Platform documentation (latest **stable** release) for 
 ### Prerequisites
 
 -   [Git](https://git-scm.com/downloads)
+-   [Airflow](https://airflow.apache.org/)
 -   [Docker](https://www.docker.com/)
 -   [Docker Compose](https://docs.docker.com/compose/install/)
+-   [Kubernetes](https://kubernetes.io/)
 
 ## User Interface
 - **DAGs**: Overview of all DAGs in your environment.

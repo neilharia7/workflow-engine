@@ -16,11 +16,12 @@
     *   MySQL has an X-com limit of `64Kb` that causes problems when dealing 
     with large amounts of data to be tranferred between two tasks in a DAG 
     (though ideally not recommendedto do via X-com).
-    On the other hand postgres supports upto 1GB 
+    On the other hand postgres supports upto `1GB` 
     (practically more but being limited in airflow) of data store per cell 
     making it the choice for the replacement.
 *   Additional Support for Business Logic
     *   date conversion, 
 
+## v1.0.9
 
 

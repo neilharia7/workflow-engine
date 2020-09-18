@@ -94,7 +94,7 @@ def dynamic_task_composer(task_data: dict, __dag__: dict):
 			provide_context=True,
 			python_callable=customized_function,
 			# task will be trigger when all preceding task(s) have been executed
-			trigger_rule="all_done",
+			trigger_rule=Config.Triggers.all_done,
 			op_kwargs=task_data.get('request'),
 			#  depends_on_past (boolean) that, when set to True,
 			#  keeps a task from getting triggered if the previous schedule for the task hasn’t succeeded.
@@ -112,7 +112,7 @@ def dynamic_task_composer(task_data: dict, __dag__: dict):
 				task_id=task_data.get('task_name'),
 				provide_context=True,
 				python_callable=customized_function,
-				trigger_rule="one_success",
+				trigger_rule=Config.Triggers.one_success,
 				op_kwargs=task_data.get('request'),
 				depends_on_past=True,
 				templates_dict={
@@ -130,7 +130,7 @@ def dynamic_task_composer(task_data: dict, __dag__: dict):
 				task_id=task_data.get('task_name'),
 				provide_context=True,
 				python_callable=customized_function,
-				trigger_rule="one_success",
+				trigger_rule=Config.Triggers.one_success,
 				depends_on_past=True,
 				op_kwargs=task_data.get('request'),
 				templates_dict={"task_info": task_data},
@@ -143,7 +143,8 @@ def dynamic_task_composer(task_data: dict, __dag__: dict):
 				task_id=task_data.get('task_name'),
 				provide_context=True,
 				python_callable=customized_function,
-				trigger_rule="one_success",  # this may be a concern considering dynamic DAGs is being created
+				# this may be a concern considering dynamic DAGs is being created
+				trigger_rule=Config.Triggers.one_success,
 				op_kwargs=task_data.get('request'),
 				depends_on_past=True,
 				templates_dict={"task_info": task_data},
@@ -158,7 +159,7 @@ def dynamic_task_composer(task_data: dict, __dag__: dict):
 			provide_context=True,
 			python_callable=eval(task_data.get("transform_type")),
 			do_xcom_push=True,
-			trigger_rule="one_success",
+			trigger_rule=Config.Triggers.one_success,
 			templates_dict={"task_info": task_data},
 			dag=__dag__
 		)
@@ -170,7 +171,7 @@ def dynamic_task_composer(task_data: dict, __dag__: dict):
 			provide_context=True,
 			python_callable=customized_function,
 			do_xcom_push=True,
-			trigger_rule="one_success",
+			trigger_rule=Config.Triggers.one_success,
 			templates_dict={"task_info": task_data},
 			dag=__dag__
 		)
@@ -181,7 +182,7 @@ def dynamic_task_composer(task_data: dict, __dag__: dict):
 			task_id=task_data.get('task_name'),
 			provide_context=True,
 			python_callable=customized_function,
-			trigger_rule="one_success",
+			trigger_rule=Config.Triggers.one_success,
 			op_kwargs=task_data.get('request'),
 			depends_on_past=True,
 			templates_dict={
@@ -195,7 +196,7 @@ def dynamic_task_composer(task_data: dict, __dag__: dict):
 		
 		return DummyOperator(
 			task_id=task_data.get('task_name'),
-			trigger_rule="all_done",
+			trigger_rule=Config.Triggers.all_done,
 			dag=__dag__
 		)
 
@@ -215,7 +216,7 @@ if flag:
 		with DAG(
 				dag_id=dag_data.get('name', dag_data.get('dag_id')),
 				default_args=dag_registry,
-				schedule_interval=None
+				schedule_interval=dag_data.get('scheduler', None)
 		) as dag:
 			
 			# reverse mapping

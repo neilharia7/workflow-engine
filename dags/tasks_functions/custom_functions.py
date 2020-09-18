@@ -159,7 +159,7 @@ def customized_function(**kwargs):
 			response = requests.get(url=url, headers=headers)
 		else:
 			# check if the data is needed to be passed in form-type or json
-			# TODO key not present in current request format
+			# Future support
 			if task_info.get('send_type', '') == 'form-data':
 				response = requests.post(url=url, headers=headers, data=payload)
 			else:  # json
@@ -267,7 +267,6 @@ def customized_function(**kwargs):
 				else:
 					result_task.append(query.get('result'))
 			
-			# todo check if existing dags are not broken
 			kwargs['ti'].xcom_push(key=run_id, value=task_data)
 			return list(set(child_tasks) - set(result_task))[0]
 	
