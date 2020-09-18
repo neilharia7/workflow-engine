@@ -13,6 +13,29 @@ def change_datetime(string, old_format, new_format):
 	return date_obj.strftime(new_format)
 
 
+def type_checker(string: object):
+	"""
+	
+	:param string:
+	:return:
+	"""
+	if string:
+		# check if string is bool
+		try:
+			return eval(str(string))
+		except (NameError, SyntaxError):
+			pass
+		
+		# if string is number
+		try:
+			return int(float(string))
+		except (ValueError, TypeError):
+			pass
+		
+		return str(string)
+	return string  # bool, empty dict, list etc...
+
+
 def parses_to_integer(string):
 	"""
 	checks whether the string in a number or not
@@ -54,7 +77,8 @@ def construct_json(json_structure, masala):
 					print("ignore: -> " + str(e))
 		else:
 			if value and value in masala:
-				json_structure[key] = masala[value] if parses_to_integer(masala[value]) else str(masala[value])
+				json_structure[key] = type_checker(masala[value])
+				# json_structure[key] = masala[value] if parses_to_integer(masala[value]) else str(masala[value])
 	
 	return json_structure
 

@@ -43,7 +43,7 @@ def format_query(task_data: dict, query: dict):
 		skip_keys.append(key)
 		data.update(data)
 	
-	print("formatted data", data)
+	# print("formatted data", data)
 	
 	# get the result of the logic
 	flag = logic_decoder(rule, data)
@@ -139,7 +139,7 @@ def customized_function(**kwargs):
 					user_input[key] = parses_to_integer(val)
 				
 				task_data.update(user_input)
-				print(f'task_data\n{task_data}')
+				# print(f'task_data\n{task_data}')
 		
 		except Exception as e:
 			logging.error(f'User Input Exception {e}')
@@ -183,7 +183,6 @@ def customized_function(**kwargs):
 					print("response >> ", response.text)
 					x_com_push_data = json.loads(response.text)
 					x_com_push_data.update(task_data)
-					print(f"xCom >> {x_com_push_data}")
 					x_com_push_data['status'] = response.status_code
 					
 					kwargs['ti'].xcom_push(key=run_id, value=x_com_push_data)
@@ -223,9 +222,18 @@ def customized_function(**kwargs):
 			"""
 			flag = format_query(task_data, queries[0])
 			if queries[0].get('fields'):
+				
+				# Creating different keys for same data TODO fix this in future versions
+				# E.g.
+				# sampleA.subsampleB (the original key) -> used in json data translation (`contstruct_json`)
+				# subsampleB (extra key) -> will be used for populating data in queries
+				# both being stored in xcom so the same can be used in future tasks accordingly
 				key = [k for k, v in queries[0].get('fields').items()][0]
-				print(key)
-				task_data.update({key: flag})
+				res = {key: flag}
+				key = [k for k, v in queries[0].get('fields').items()][0].split('.')[-1]
+				res[key] = flag
+				print(f"res update >> {res}")
+				task_data.update(res)
 			
 			# save the data and proceed to subsequent task
 			kwargs['ti'].xcom_push(key=run_id, value=task_data)
@@ -240,7 +248,17 @@ def customized_function(**kwargs):
 				# limitations -> only a single key will be updated
 				if query.get('fields'):
 					key = [k for k, v in query.get('fields').items()][0]
-					task_data.update({key: flag})
+					res = {key: flag}
+					
+					# Creating different keys for same data TODO fix this in future versions
+					# E.g.
+					# sampleA.subsampleB (the original key) -> used in json data translation (`contstruct_json`)
+					# subsampleB (extra key) -> will be used for populating data in queries
+					# both being stored in xcom so the same can be used in future tasks accordingly
+					key = [k for k, v in query.get('fields').items()][0].split('.')[-1]
+					res[key] = flag
+					print(f"else res update >> {res}")
+					task_data.update(res)
 				
 				if flag:
 					kwargs['ti'].xcom_push(key=run_id, value=task_data)
@@ -331,6 +349,14 @@ def customized_function(**kwargs):
 		updated_aliases = dict()
 		position = 0
 		for alias in aliases:
+			
+			# Creating different keys for same data TODO fix this in future versions
+			# E.g.
+			# sampleA.subsampleB (the original key) -> used in json data translation (`contstruct_json`)
+			# subsampleB (extra key) -> will be used for populating data in queries
+			# both being stored in xcom so the same can be used in future tasks accordingly
+			updated_aliases[alias['aliasName'].split('.')[-1]] = str(
+				data_variable['var'])[position: position + int(alias['length'])]
 			updated_aliases[alias['aliasName']] = str(data_variable['var'])[position: position + int(alias['length'])]
 			position += int(alias['length'])
 		
@@ -364,9 +390,17 @@ def customized_function(**kwargs):
 		print(f"updated_logic >> {updated_logic}")
 		updated_date = convert_date_format(date_variable, current_date_format, new_date_format)
 		
+		# Creating different keys for same data TODO fix this in future versions
+		# E.g.
+		# sampleA.subsampleB (the original key) -> used in json data translation (`contstruct_json`)
+		# subsampleB (extra key) -> will be used for populating data in queries
+		# both being stored in xcom so the same can be used in future tasks accordingly
+		alias = [key for key, value in task_info.get('result').items()][0].split('.')[-1]
+		dictionary = {alias: updated_date}
 		alias = [key for key, value in task_info.get('result').items()][0]
-		print("date converted result >> ", str({alias: updated_date}))
-		task_data.update({alias: updated_date})
+		dictionary[alias] = updated_date
+		print("date converted result >> ", str(dictionary))
+		task_data.update(dictionary)
 		# adding the converted date back to x_com to be used in consequent tasks
 		kwargs['ti'].xcom_push(key=run_id, value=task_data)
 		
