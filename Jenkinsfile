@@ -72,6 +72,11 @@ pipeline {
 
         // TODO add rollback in future
 		stage ("Life Purpose") {
+
+			when {
+				branch 'master'
+			}
+
 			steps {
 				sh "chmod +x changeVersionTag.sh"
 				sh "./changeVersionTag.sh ${env.BUILD_VERSION}"
