@@ -11,8 +11,6 @@
 *   Scalability & Load testing (EKS <> Helm-Charts)
     *   In - progress
     *   Priority (Medium)
-    
-*   Code Refactoring & Documentation
 
 *   Deployment porting from `EKS` to `kops`
 

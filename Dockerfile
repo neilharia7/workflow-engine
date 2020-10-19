@@ -15,9 +15,9 @@ ENV     LC_ALL en_US.UTF-8
 ENV     LC_CTYPE en_US.UTF-8
 ENV     LC_MESSAGES en_US.UTF-8
 
-WORKDIR /requirements
+# WORKDIR /requirements
 
-COPY requirements/airflow.txt /requirements/airflow.txt
+COPY requirements.txt /requirements.txt
 
 RUN         set -ex \
         &&  buildDeps=' \
@@ -34,7 +34,7 @@ RUN         set -ex \
         &&  update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
         &&  useradd -ms /bin/bash -d ${AIRFLOW_HOME} airflow \
 	    &&  pip3 install mysql-connector-python mysql \
-        &&  pip3 install -r /requirements/airflow.txt \
+        &&  pip3 install -r /requirements.txt \
         &&  apt-get remove --purge -yqq $buildDeps libpq-dev \
         &&  apt-get clean \
         &&  rm -rf \
