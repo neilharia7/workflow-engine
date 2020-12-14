@@ -20,7 +20,6 @@ spec:
             backend:
               serviceName: {{ template "airflow.fullname" . }}-web
               servicePort: web
-{{/*      host: {{ .Values.ingress.host }}*/}}
 ---
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
