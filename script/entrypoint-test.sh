@@ -122,6 +122,7 @@ webserver)
     # With the "Local" and "Sequential" executors it should all run in one container.
     airflow scheduler &
   fi
+  airflow users create --role Admin --username admin --password admin --firstname Neil --lastname Haria --email neilharia007@gmail.com
   exec airflow webserver
   ;;
 scheduler)
