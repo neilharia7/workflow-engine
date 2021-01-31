@@ -13,6 +13,11 @@ pipeline {
 	stages {
 		// Extract the git tag from the commit id
 		stage ("Advent") {
+
+			when {
+				branch 'master'
+			}
+
 			steps {
 				script {
 					env.COMMIT_ID = sh(returnStdout: true, script: "git rev-list --tags --date-order | head -1").trim()
@@ -33,7 +38,12 @@ pipeline {
 
 		stage ("Awakening") {
 			when {
-				expression { env.BUILD_VERSION != null }
+				allOf {
+					expression {env.BRANCH_NAME == 'master'}
+					expression { env.BUILD_VERSION != null }
+
+				}
+
 			}
 
 			steps {
@@ -53,6 +63,11 @@ pipeline {
 		}
 
 		stage("Discovery") {
+
+			when {
+				branch 'master'
+			}
+			
 			steps {
 
 				script {
