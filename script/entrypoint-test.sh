@@ -9,6 +9,7 @@ TRY_LOOP="20"
 
 # Global defaults and back-compat
 : "${AIRFLOW_HOME:="/usr/local/airflow"}"
+: "${LOAD_DAGS_EXAMPLES:-false}"
 : "${AIRFLOW__CORE__FERNET_KEY:=${FERNET_KEY:=$(python -c "from cryptography.fernet import Fernet; FERNET_KEY = Fernet.generate_key().decode(); print(FERNET_KEY)")}}"
 : "${AIRFLOW__CORE__EXECUTOR:=${EXECUTOR:-Sequential}Executor}"
 
@@ -28,7 +29,9 @@ export \
   AIRFLOW__CORE__FERNET_KEY \
   AIRFLOW__CORE__LOAD_EXAMPLES \
   AIRFLOW__CORE__REMOTE_LOGGING \
-  AIRFLOW__CORE__REMOTE_BASE_LOG_FOLDER
+  AIRFLOW__CORE__REMOTE_BASE_LOG_FOLDER \
+  LOAD_DAGS_EXAMPLES
+
 
 # Install custom python package if requirements.txt is present
 #if [ -e "/requirements.txt" ]; then

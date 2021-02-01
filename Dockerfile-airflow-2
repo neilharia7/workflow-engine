@@ -4,7 +4,7 @@ ENV     DEBIAN_FRONTEND noninteractive
 ENV     TERM linux
 
 # Airflow
-ARG     AIRFLOW_VERSION=1.10.12
+ARG     AIRFLOW_VERSION=2.0.0
 ENV     AIRFLOW_HOME=/usr/local/airflow
 ENV     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=false
 ENV     KUBECTL_VERSION=v1.18.0
@@ -55,8 +55,8 @@ COPY    ./dags ${AIRFLOW_HOME}/dags
 COPY    script/entrypoint-test.sh ${AIRFLOW_HOME}/entrypoint.sh
 COPY    config/airflow.cfg ${AIRFLOW_HOME}/airflow.cfg
 
-# RUN     mkdir ${AIRFLOW_HOME}/plugins
-# ADD 	./plugins ${AIRFLOW_HOME}/plugins
+RUN     mkdir ${AIRFLOW_HOME}/plugins
+ADD 	./plugins ${AIRFLOW_HOME}/plugins
 
 RUN     chown -R airflow: ${AIRFLOW_HOME} \
         &&  chmod +x ${AIRFLOW_HOME}/entrypoint.sh
