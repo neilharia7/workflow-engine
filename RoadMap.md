@@ -2,11 +2,10 @@
 
 
 ## Issues
-*   Scheduler repeatedly crashing (alertnative) 
+*   Scheduler repeatedly crashing (alternative) 
 
 
 ## TODOs
-*   Airflow 2.0 Update
 
 *   Scalability & Load testing (EKS <> Helm-Charts)
     *   In - progress

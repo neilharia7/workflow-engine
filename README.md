@@ -209,7 +209,6 @@ Follow the `notes` generated at the end of helm deployment for more instructions
 
 ## Acknowledgements
 -   [Apache Airflow](https://airflow.apache.org/)
--   [Puckel](https://github.com/puckel/docker-airflow)
 
 ## Maintainer
 -   [neilharia7](https://github.com/neilharia7)
