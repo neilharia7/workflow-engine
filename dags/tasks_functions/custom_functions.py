@@ -93,7 +93,7 @@ def customized_function(**kwargs):
 			# format key value type in input dict
 			for key, val in fields.items():
 				if val:
-					fields[key] = parses_to_integer(val)
+					fields[key] = type_checker(val)
 		except Exception as e:
 			logging.error(f"User Input Exception >> {e}")
 		
@@ -136,7 +136,7 @@ def customized_function(**kwargs):
 			if isinstance(user_input, dict):
 				# format key value type in input dict
 				for key, val in user_input.items():
-					user_input[key] = parses_to_integer(val)
+					user_input[key] = type_checker(val)
 				
 				task_data.update(user_input)
 				# print(f'task_data\n{task_data}')
