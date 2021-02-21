@@ -15,7 +15,10 @@ pipeline {
 		stage ("Advent") {
 
 			when {
-				branch 'master'
+				anyOf {
+					branch 'master';
+					branch 'staging'
+				}
 			}
 
 			steps {
@@ -39,7 +42,7 @@ pipeline {
 		stage ("Awakening") {
 			when {
 				allOf {
-					expression {env.BRANCH_NAME == 'master'}
+					expression {env.BRANCH_NAME == 'staging'}
 					expression { env.BUILD_VERSION != null }
 
 				}
@@ -65,7 +68,7 @@ pipeline {
 		stage("Discovery") {
 
 			when {
-				branch 'master'
+				branch 'staging'
 			}
 			
 			steps {
@@ -89,7 +92,7 @@ pipeline {
 		stage ("Life Purpose") {
 
 			when {
-				branch 'master'
+				branch 'staging'
 			}
 
 			steps {
