@@ -1,10 +1,10 @@
-FROM python:3.7-stretch
+FROM python:3.7-slim-stretch
 
 ENV     DEBIAN_FRONTEND noninteractive
 ENV     TERM linux
 
 # Airflow
-ARG     AIRFLOW_VERSION=1.10.14
+ARG     AIRFLOW_VERSION=2.0.0
 ENV     AIRFLOW_HOME=/usr/local/airflow
 ENV     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=false
 ENV     KUBECTL_VERSION=v1.18.0
@@ -33,7 +33,7 @@ RUN         set -ex \
         &&  locale-gen \
         &&  update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
         &&  useradd -ms /bin/bash -d ${AIRFLOW_HOME} airflow \
-	    &&  pip3 install mysql-connector-python mysql \
+        # &&  pip3 install mysql-connector-python mysql \
         &&  pip3 install -r /requirements.txt \
         &&  apt-get remove --purge -yqq $buildDeps libpq-dev \
         &&  apt-get clean \
@@ -45,9 +45,9 @@ RUN         set -ex \
                 /usr/share/doc \
                 /usr/share/doc-base
 
-RUN     curl -L -o /usr/local/bin/kubectl \
-                https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl \
-        &&  chmod +x /usr/local/bin/kubectl
+# RUN     curl -L -o /usr/local/bin/kubectl \
+#                https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl \
+#        &&  chmod +x /usr/local/bin/kubectl
 
 COPY    ./dags ${AIRFLOW_HOME}/dags
 # COPY    script/entrypoint.sh ${AIRFLOW_HOME}/entrypoint.sh
@@ -56,7 +56,7 @@ COPY    script/entrypoint-postgres.sh ${AIRFLOW_HOME}/entrypoint.sh
 COPY    config/airflow.cfg ${AIRFLOW_HOME}/airflow.cfg
 
 RUN     mkdir ${AIRFLOW_HOME}/plugins
-ADD 	./plugins ${AIRFLOW_HOME}/plugins
+# ADD   ./plugins ${AIRFLOW_HOME}/plugins
 
 RUN     chown -R airflow: ${AIRFLOW_HOME} \
         &&  chmod +x ${AIRFLOW_HOME}/entrypoint.sh

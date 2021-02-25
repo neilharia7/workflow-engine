@@ -76,8 +76,9 @@ if [[ "$1" = "webserver" ]] || [[ "$1" = "worker" ]] || [[ "$1" = "scheduler" ]]
   done
   if [[ "$1" = "webserver" ]]; then
     echo "Initialize database..."
-    echo "$CMD initdb"
-    ${CMD} initdb
+    echo "$CMD db init"
+    ${CMD} db init 
+    airflow users create --role Admin --username admin --password admin --firstname Neil --lastname Haria --email neilharia007@gmail.com
 #    python3 ${AIRFLOW_HOME}/setup_connections.py
   fi
 fi
