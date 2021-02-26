@@ -18,7 +18,7 @@ AIRFLOW__CORE__REMOTE_LOGGING=true
 AIRFLOW__CORE__REMOTE_BASE_LOG_FOLDER="s3://flowxpert/airflow_logs"
 
 if [[ -z ${FERNET_KEY} ]]; then
-	FERNET_KEY=$(python3 -c "from cryptography.fernet import Fernet; FERNET_KEY = Fernet.generate_key().decode(); print(FERNET_KEY)")
+  FERNET_KEY=$(python3 -c "from cryptography.fernet import Fernet; FERNET_KEY = Fernet.generate_key().decode(); print(FERNET_KEY)")
 fi
 
 echo "POSTGRES HOST: " ${POSTGRES_HOST}
@@ -43,15 +43,15 @@ AIRFLOW__CELERY__RESULT_BACKEND="db+postgresql://${POSTGRES_USER}:${POSTGRES_PAS
 echo "SQL: " ${AIRFLOW__CORE__SQL_ALCHEMY_CONN}
 
 export AIRFLOW__CORE__SQL_ALCHEMY_CONN \
-       AIRFLOW__CELERY__RESULT_BACKEND \
-       AIRFLOW__CORE__REMOTE_LOGGING \
-       AIRFLOW__CORE__REMOTE_BASE_LOG_FOLDER
+AIRFLOW__CELERY__RESULT_BACKEND \
+AIRFLOW__CORE__REMOTE_LOGGING \
+AIRFLOW__CORE__REMOTE_BASE_LOG_FOLDER
 
 # wait for rabbitmq
-if [[ "$1" = "webserver" ]] || [[ "$1" = "worker" ]] || [[ "$1" = "scheduler" ]] || [[ "$1" = "flower" ]] ; then
+if [[ "$1" == "webserver" ]] || [[ "$1" == "worker" ]] || [[ "$1" == "scheduler" ]] || [[ "$1" == "flower" ]]; then
   j=0
-  while ! curl -sI -u ${RABBITMQ_CREDS} http://${RABBITMQ_HOST}:${RABBITMQ_MANAGEMENT_PORT}/api/whoami |grep '200 OK'; do
-    j=`expr ${j} + 1`
+  while ! curl -sI -u ${RABBITMQ_CREDS} http://${RABBITMQ_HOST}:${RABBITMQ_MANAGEMENT_PORT}/api/whoami | grep '200 OK'; do
+    j=$(expr ${j} + 1)
     if [[ ${j} -ge ${TRY_LOOP} ]]; then
       echo "$(date) - $RABBITMQ_HOST still not reachable, giving up"
       exit 1
@@ -63,10 +63,10 @@ if [[ "$1" = "webserver" ]] || [[ "$1" = "worker" ]] || [[ "$1" = "scheduler" ]]
 fi
 
 # wait for postgres
-if [[ "$1" = "webserver" ]] || [[ "$1" = "worker" ]] || [[ "$1" = "scheduler" ]] ; then
+if [[ "$1" == "webserver" ]] || [[ "$1" == "worker" ]] || [[ "$1" == "scheduler" ]]; then
   i=0
-  while ! nc ${POSTGRES_HOST} ${POSTGRES_PORT} >/dev/null 2>&1 < /dev/null; do
-    i=`expr ${i} + 1`
+  while ! nc ${POSTGRES_HOST} ${POSTGRES_PORT} >/dev/null 2>&1 </dev/null; do
+    i=$(expr ${i} + 1)
     if [[ ${i} -ge ${TRY_LOOP} ]]; then
       echo "$(date) - ${POSTGRES_HOST}:${POSTGRES_PORT} still not reachable, giving up"
       exit 1
@@ -74,12 +74,12 @@ if [[ "$1" = "webserver" ]] || [[ "$1" = "worker" ]] || [[ "$1" = "scheduler" ]]
     echo "$(date) - waiting for ${POSTGRES_HOST}:${POSTGRES_PORT}... $i/$TRY_LOOP"
     sleep 5
   done
-  if [[ "$1" = "webserver" ]]; then
+  if [[ "$1" == "webserver" ]]; then
     echo "Initialize database..."
     echo "$CMD initdb"
     ${CMD} init db
     airflow users create --role Admin --username admin --password admin --firstname Neil --lastname Haria --email neilharia007@gmail.com
-#    python3 ${AIRFLOW_HOME}/setup_connections.py
+    #    python3 ${AIRFLOW_HOME}/setup_connections.py
   fi
 fi
 
@@ -91,25 +91,27 @@ if [ "$AIRFLOW__CORE__EXECUTOR" = "CeleryExecutor" ]; then
     ;;
 
   scheduler)
-    
+
     exec airflow "$@"
     ;;
 
   worker | flower)
-    
+
     echo ${CMD}
     exec airflow celery "$@"
     ;;
 
   version)
-    
+
     exec airflow "$@"
     ;;
   *)
 
     # The command is something like bash, not an airflow subcommand. Just run it in the right environment.
-  exec "$@"
-  ;;
-esac
+    exec "$@"
+    ;;
+  esac
+
+fi
 
 # ${CMD} "$@"
