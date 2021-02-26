@@ -76,42 +76,21 @@ if [[ "$1" == "webserver" ]] || [[ "$1" == "worker" ]] || [[ "$1" == "scheduler"
   done
   if [[ "$1" == "webserver" ]]; then
     echo "Initialize database..."
-    echo "$CMD initdb"
-    ${CMD} init db
-    airflow users create --role Admin --username admin --password admin --firstname Neil --lastname Haria --email neilharia007@gmail.com
+    echo "$CMD db init"
+    ${CMD} db init
+    ${CMD} users create --role Admin --username admin --password admin --firstname Neil --lastname Haria --email neilharia007@gmail.com
     #    python3 ${AIRFLOW_HOME}/setup_connections.py
   fi
 fi
 
-if [ "$AIRFLOW__CORE__EXECUTOR" = "CeleryExecutor" ]; then
+if [[ "$1" == "webserver" ]]; then
+  sleep 10
+  ${CMD} "$1"
+elif [[ "$1" == "flower" ]] || [[ "$1" == "worker" ]]; then
+  echo "celery task"
+  ${CMD} celery "$1"
+else
 
-  case "$1" in webserver)
-
-    exec airflow webserver
-    ;;
-
-  scheduler)
-
-    exec airflow "$@"
-    ;;
-
-  worker | flower)
-
-    echo ${CMD}
-    exec airflow celery "$@"
-    ;;
-
-  version)
-
-    exec airflow "$@"
-    ;;
-  *)
-
-    # The command is something like bash, not an airflow subcommand. Just run it in the right environment.
-    exec "$@"
-    ;;
-  esac
-
+  sleep 20
+  ${CMD} "$1"
 fi
-
-# ${CMD} "$@"
