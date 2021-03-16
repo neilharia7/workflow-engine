@@ -2,7 +2,7 @@
 
 CMD="airflow"
 TRY_LOOP="${TRY_LOOP:-10}"
-POSTGRES_HOST="${POSTGRES_HOST:-airflow.crhcifgoezvo.ap-south-1.rds.amazonaws.com}"
+POSTGRES_HOST="${POSTGRES_HOST:-flowxpert-airflow.crhcifgoezvo.ap-south-1.rds.amazonaws.com}"
 POSTGRES_PORT=5432
 POSTGRES_CREDS="${POSTGRES_CREDS:-postgres:postgres12345}"
 POSTGRES_USER="${POSTGRES_USER:-postgres}"
