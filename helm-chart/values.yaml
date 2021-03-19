@@ -159,12 +159,12 @@ scheduler:
 
   # Same configuration for readiness
   livenessProbe:
-    initialDelaySeconds: 20
+    initialDelaySeconds: 25
     timeoutSeconds: 30
     # number of times scheduler is allowed to fail
-    # If the scheduler stops heartbeating for 80 seconds (4 * 20), 20 being the period sec. kill the scheduler
+    # If the scheduler stops heartbeating for 80 seconds (5 * 20), 20 being the period sec. kill the scheduler
     # and let k8s restart it
-    failureThreshold: 4  # fail early, fail fast...
+    failureThreshold: 5  # fail early, fail fast...
     periodSeconds: 20
 
   resources: {}

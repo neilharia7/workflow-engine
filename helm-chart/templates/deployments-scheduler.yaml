@@ -34,8 +34,8 @@ spec:
 
           {{- range tuple "readinessProbe" "livenessProbe" }}
           {{ . }}:
-            initialDelaySeconds: {{ $.Values.scheduler.livenessProbe.initialDelaySeconds | default 0 }}
-            timeoutSeconds: {{ $.Values.scheduler.livenessProbe.timeoutSeconds | default 10 }}
+            initialDelaySeconds: {{ $.Values.scheduler.livenessProbe.initialDelaySeconds | default 20 }}
+            timeoutSeconds: {{ $.Values.scheduler.livenessProbe.timeoutSeconds | default 20 }}
             failureThreshold: {{ $.Values.scheduler.livenessProbe.failureThreshold | default 20 }}
             periodSeconds: {{ $.Values.scheduler.livenessProbe.periodSeconds | default 30 }}
             exec:
