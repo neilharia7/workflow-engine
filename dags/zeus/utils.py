@@ -19,13 +19,13 @@ def type_checker(string: object):
 			return eval(str(string))
 		except (NameError, SyntaxError):
 			pass
-		
+
 		# if string is number
 		try:
 			return int(float(string))
 		except (ValueError, TypeError):
 			pass
-		
+
 		return str(string)
 	return string  # bool, empty dict, list etc...
 
@@ -39,7 +39,7 @@ def construct_json(json_structure, masala):
 	:param masala:
 	:return:
 	"""
-	
+
 	for key, value in json_structure.items():
 		if isinstance(value, dict):
 			json_structure[key] = construct_json(value, masala)
@@ -56,7 +56,7 @@ def construct_json(json_structure, masala):
 		else:
 			if value and value in masala:
 				json_structure[key] = type_checker(masala[value])
-	
+
 	return json_structure
 
 
@@ -67,7 +67,7 @@ def dict_merge(data):
 	:param data:
 	:return:
 	"""
-	
+
 	if len(data) == 1:
 		return data[0]
 	else:
@@ -86,37 +86,45 @@ def concat(**kwargs):
 	:param kwargs:
 	:return:
 	"""
-	
+
+	# get the unique run_id (uuid generated at the time of dag execution call)
+	run_id = kwargs['dag_run'].conf['run_id']
+
+	print(f'run_id\n{run_id}')
+
 	# get all the task information
 	task_info = kwargs.get('templates_dict').get('task_info', None)
-	
+
 	print("task_info", task_info)
 	task_instance = kwargs['ti']
-	
+
 	# get data from previous tasks
 	complete_data = task_instance.xcom_pull(key=None, task_ids=task_info.get('parent_task'))
-	
+
 	complete_data = dict_merge(complete_data)
 	print(f"complete_data {complete_data}")
-	
+
 	inputs = task_info.get('input')  # dict
 	output = task_info.get('output')  # dict
-	
+
 	# converts 200.data.First-Name -> First-Name etc
 	inputs = [key.split('.')[-1] for key, val in inputs.items()]
-	
+
 	transform = ""
-	
+
 	for key, value in complete_data.items():
 		if key in inputs:
 			transform += " " + value
-	
+
 	transform = transform.strip()
-	
+
+	# no multiple concat support for now.
 	for key, value in output.items():
 		# save the transformed response	to xcom
-		kwargs['ti'].xcom_push(key=key, value={key: transform})
-	
+		complete_data.update({key: transform})
+
+	kwargs['ti'].xcom_push(key=run_id, value=complete_data)
+
 	return task_info.get('child_task')[0]
 
 
@@ -128,7 +136,7 @@ def regex_match(a, b):
 	:param b: regex string (assumption)
 	:return:
 	"""
-	
+
 	try:
 		return True if re.match(r'{}'.format(b), str(a)) else False
 	except TypeError as te:
@@ -147,7 +155,7 @@ def element_check(a, b):
 
 def update_nested_dict(data, key, value, skip_keys):
 	for k, v in data.items():
-		
+
 		# skip data in status codes e.g. 200: {}
 		"""
 		TODO more info to be added
@@ -172,14 +180,14 @@ def logic_decoder(rules, data=None):
 	:param data:
 	:return:
 	"""
-	
+
 	if rules is None or not isinstance(rules, dict):
 		return rules
-	
+
 	data = data or {}
-	
+
 	ops, values = [[key, val] for key, val in rules.items()][0]
-	
+
 	operations = {
 		"==": lambda a, b: a == b,
 		"===": lambda a, b: a is b,
@@ -224,17 +232,17 @@ def logic_decoder(rules, data=None):
 		"count": lambda *args: sum(1 if a else 0 for a in args),
 		"merge": merge
 	}
-	
+
 	if ops not in operations:
 		raise RuntimeError("Unrecognized operation %s" % ops)  # TODO add if occurs
-	
+
 	# Easy syntax for unary operators, like {"var": "x"} instead of strict {"var": ["x"]}
 	if type(values) not in [list, tuple]:
 		values = [values]
-	
+
 	# To understand recursion, you must first understand recursion!
 	values = map(lambda val: logic_decoder(val, data), values)
-	
+
 	return operations[ops](*values)
 
 
@@ -244,14 +252,14 @@ def merge(*args):
 	:param args:
 	:return:
 	"""
-	
+
 	result = list()
 	for arg in args:
 		if isinstance(arg, list) or isinstance(arg, tuple):
 			result += list(arg)
 		else:
 			result.append(arg)
-	
+
 	return result
 
 
@@ -266,10 +274,10 @@ def flatten(initial, key, resultant: dict, separator=None):
 	:param separator
 	:return:
 	"""
-	
+
 	if not separator:
 		separator = '.'
-	
+
 	if isinstance(initial, dict):
 		for k in initial:
 			n_key = f"{key}{separator}{k}" if len(key) > 0 else k
@@ -291,5 +299,5 @@ def convert_date_format(var: str, old_format: str, new_format: str):
 	except (TypeError, ValueError) as e:
 		print(f"date format mismatch {e}")
 		raise  # just `raising` instead of raise ValueError as traceback will be lost
-	
+
 	return datetime.strptime(str(var), old_format).strftime(new_format)
