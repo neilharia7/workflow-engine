@@ -66,12 +66,12 @@ if [ "$AIRFLOW__CORE__EXECUTOR" != "SequentialExecutor" ]; then
     : "${POSTGRES_DB:="airflow"}"
     : "${POSTGRES_EXTRAS:-""}"
 
-    AIRFLOW__CORE__SQL_ALCHEMY_CONN="postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}${POSTGRES_EXTRAS}"
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN="postgresql+psycopg2://postgres:postgres12345@flowxpert-airflow.crhcifgoezvo.ap-south-1.rds.amazonaws.com:5432/airflow"
     export AIRFLOW__CORE__SQL_ALCHEMY_CONN
 
     # Check if the user has provided explicit Airflow configuration for the broker's connection to the database
     if [ "$AIRFLOW__CORE__EXECUTOR" = "CeleryExecutor" ]; then
-      AIRFLOW__CELERY__RESULT_BACKEND="db+postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}${POSTGRES_EXTRAS}"
+      AIRFLOW__CELERY__RESULT_BACKEND="db+postgresql://postgres:postgres12345@flowxpert-airflow.crhcifgoezvo.ap-south-1.rds.amazonaws.com:5432/airflow"
       export AIRFLOW__CELERY__RESULT_BACKEND
     fi
   else
@@ -86,7 +86,6 @@ if [ "$AIRFLOW__CORE__EXECUTOR" != "SequentialExecutor" ]; then
     POSTGRES_PORT=$(echo -n "$POSTGRES_ENDPOINT" | cut -d ':' -f2)
   fi
 
-  wait_for_port "Postgres" "$POSTGRES_HOST" "$POSTGRES_PORT"
 fi
 
 # CeleryExecutor drives the need for a Celery broker, here Redis is used

@@ -18,5 +18,6 @@
 
 
 
-apache-airflow[amazon,celery,http,postgres,redis,virtualenv]==2.0.0
+apache-airflow[aws,celery,http,postgres,redis,virtualenv]==2.0.1
+# apache-airflow[all]==2.0.0
 Flask-Admin

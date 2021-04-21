@@ -114,7 +114,7 @@ def concat(**kwargs):
 
 	for key, value in complete_data.items():
 		if key in inputs:
-			transform += " " + value
+			transform += " " + str(value)
 
 	transform = transform.strip()
 
