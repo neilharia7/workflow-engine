@@ -1,4 +1,4 @@
-FROM python:3.7-slim-stretch
+FROM python:3.8-slim-stretch
 
 ENV     DEBIAN_FRONTEND noninteractive
 ENV     TERM linux
@@ -34,7 +34,8 @@ RUN         set -ex \
         &&  locale-gen \
         &&  update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
         &&  useradd -ms /bin/bash -d ${AIRFLOW_HOME} airflow \
-        # &&  pip3 install mysql-connector-python mysql \
+	&&  pip install SQLAlchemy==1.3.23 \
+	&&  pip install Flask-SQLAlchemy==2.4.4 \
         &&  pip3 install -r /requirements.txt \
         &&  apt-get remove --purge -yqq $buildDeps libpq-dev \
         &&  apt-get clean \
@@ -68,4 +69,4 @@ USER    airflow
 
 WORKDIR ${AIRFLOW_HOME}
 
-ENTRYPOINT  ["./entrypoint.sh"]
+ENTRYPOINT ["./entrypoint.sh"]
