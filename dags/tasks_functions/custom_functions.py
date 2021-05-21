@@ -268,6 +268,8 @@ def customized_function(**kwargs):
 					result_task.append(query.get('result'))
 			
 			kwargs['ti'].xcom_push(key=run_id, value=task_data)
+			print(f"child_tasks {child_tasks}")
+			print(f"result_task {result_task}")
 			return list(set(child_tasks) - set(result_task))[0]
 	
 	elif task_info.get('type') in ["webhook_success", "webhook_reject"]:  # under construction
@@ -298,14 +300,19 @@ def customized_function(**kwargs):
 		# adhoc code # TODO replace
 		# removes status codes from the values if the type is `map`
 		# (removed at the time of creating the intrepretable dag file)
+		print(f"request_structure {request_structure}")
+		print(f"status {status}")
 		for k, v in request_structure.items():
 			if isinstance(v, dict):
 				for k1, v1 in v.items():
 					v[k1] = v1.replace(k, '').strip('.') if v1.__contains__('.') else v1
-		
-		for key, val in request_structure.items():
-			if int(status) != int(key):
-				cleanup.append(key)
+		try:
+			for key, val in request_structure.items():
+				if int(status) != int(key):
+					cleanup.append(key)
+		except Exception as e:
+			print(f'exception {e}')
+			pass
 		for key in cleanup:
 			request_structure.pop(key)
 		
