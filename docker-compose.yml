@@ -4,9 +4,13 @@ services:
     image: 'redis:5.0.5'
     # command: redis-server --requirepass redispass
 
+  initdb:
+    image: airflow-neil:latest
+    entrypoint: airflow db init
+
   webserver:
     user: airflow
-    image: puckel/docker-airflow
+    image: airflow-neil:latest
     restart: always
     depends_on:
       - redis
@@ -22,7 +26,7 @@ services:
     volumes:
       - ./dags:/usr/local/airflow/dags
       # Uncomment to include custom plugins
-      - ./plugins:/usr/local/airflow/plugins
+      # - ./plugins:/usr/local/airflow/plugins
     ports:
       - "8080:8080"
     command: webserver
@@ -34,7 +38,7 @@ services:
 
   flower:
     user: airflow
-    image: puckel/docker-airflow
+    image: airflow-neil:latest
     restart: always
     depends_on:
       - redis
@@ -47,14 +51,14 @@ services:
 
   scheduler:
     user: airflow
-    image: puckel/docker-airflow
+    image: airflow-neil:latest
     restart: always
     depends_on:
       - webserver
     volumes:
       - ./dags:/usr/local/airflow/dags
       # Uncomment to include custom plugins
-      - ./plugins:/usr/local/airflow/plugins
+      # - ./plugins:/usr/local/airflow/plugins
     environment:
       - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=false
       - LOAD_EX=n
@@ -68,14 +72,14 @@ services:
 
   worker:
     user: airflow
-    image: puckel/docker-airflow
+    image: airflow-neil:latest
     restart: always
     depends_on:
       - scheduler
     volumes:
       - ./dags:/usr/local/airflow/dags
       # Uncomment to include custom plugins
-      - ./plugins:/usr/local/airflow/plugins
+      # - ./plugins:/usr/local/airflow/plugins
     environment:
       - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=false
       - FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
