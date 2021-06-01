@@ -24,6 +24,26 @@ def request_formatter(request_json: dict):
 	return request_json
 
 
+def filter_response(parent_data: dict, result: dict) -> dict:
+	"""
+	This func will check whether any keys are not assigned any values
+	if not, will be replaced by `false` as default value
+
+	:param parent_data:
+	:param result:
+	:return:
+	:rtype: dict
+	"""
+	
+	keys = set(parent_data.keys())
+	
+	for key, val in result.items():
+		if val in keys:
+			result[key] = False
+	
+	return result
+
+
 def format_query(task_data: dict, query: dict):
 	"""
 
@@ -322,12 +342,16 @@ def customized_function(**kwargs):
 			break
 		
 		request_structure['run_id'] = kwargs['dag_run'].conf['run_id']
-		request_structure['status_code'] = task_data.get('status')
+		request_structure['status_code'] = task_data.get('status', 200)
 		
 		data = flatten(task_data, '', dict())
 		
 		print('data', data)
 		payload = construct_json(request_structure, data)
+		
+		data_from_parent = task_info.get('data_from_parent_node', {})
+		payload = filter_response(data_from_parent, payload)
+		
 		print('payload', payload)
 		
 		response = requests.post(url=url, json=payload)

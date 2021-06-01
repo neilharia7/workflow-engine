@@ -3,7 +3,7 @@
 [![forthebadge made-with-python](http://ForTheBadge.com/images/badges/made-with-python.svg)](https://www.python.org/)
 
 ![Docker Hub](https://img.shields.io/badge/docker-ready-blue.svg)
-![semver](https://img.shields.io/badge/semver-1.0.11-blue)
+![semver](https://img.shields.io/badge/semver-1.0.17-blue)
 
 ## Table of Contents
 

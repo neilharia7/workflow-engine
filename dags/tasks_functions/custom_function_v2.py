@@ -24,6 +24,26 @@ def request_formatter(request_json: dict):
 	return request_json
 
 
+def filter_response(parent_data: dict, result: dict) -> dict:
+	"""
+	This func will check whether any keys are not assigned any values
+	if not, will be replaced by `false` as default value
+	
+	:param parent_data:
+	:param result:
+	:return:
+	:rtype: dict
+	"""
+	
+	keys = set(parent_data.keys())
+	
+	for key, val in result.items():
+		if val in keys:
+			result[key] = False
+	
+	return result
+
+
 def format_query(task_data: dict, query: dict):
 	"""
 
@@ -163,7 +183,57 @@ def customized_function(**kwargs):
 	elif task_info.get('type') == "api":    # transform_type, input & output keys will be empty
 		"""
 		Sample Struct
-		
+		{
+            "task_name": "<task_name>",
+            "task_id": "<task_id>",
+            "type": "api",
+            "parent_task": [
+                "<parent_task(s)>"
+            ],
+            "child_task": [
+                "<child_tasks>",
+            ],
+            "data_from_parent_node": {
+                "<key>": "<value>",
+                "<key>": "<value>",
+                .
+            },
+            "input": {},
+            "output": {},
+            "retries": 3,
+            "max_retry_delay": 1200,
+            "exponential_retry": false,
+            "retry_delay": 600,
+            "request": {
+                "<key>": {
+                    "type": "map",
+                    "value": "<value>"
+                }
+            },
+            "params": {},
+            "headers": {
+                "Content-Type": {
+                    "type": "static",
+                    "value": "application/json"
+                },
+                
+            },
+            "method": "<method>",
+            "url": "<url>",
+            "response": {
+                "<status_code>": {
+                    "<key>": "<value>",
+                    "<key>": "<value>",
+                    ...
+                },
+                "<status_code>": {
+                    "<key>": "<value>",
+                    "<key>": "<value>",
+                    ...
+                },
+                ..
+            }
+        }
 		"""
 		
 		# segragate all the data from the task_info required to call the respective API
@@ -241,7 +311,10 @@ def customized_function(**kwargs):
 					x_com_push_data = json.loads(response.text)
 					x_com_push_data.update(task_data)
 					x_com_push_data['status'] = response.status_code
-				
+					
+					# adding skip tasks to eliminate possibility of consequent tasks getting triggered unnecessarily
+					x_com_push_data['skipped_tasks'] = task_info.get('child_task').pop(resp_structure.get('next_task'))
+					
 					kwargs['ti'].xcom_push(key=run_id, value=x_com_push_data)
 					# if success call the subsequent task
 					return resp_structure.get('next_task')
@@ -255,22 +328,19 @@ def customized_function(**kwargs):
 		"""
 		Sample struct
 		{
-			"task_name":"KYCCheck",
-			"task_id":"KYCCheck",
-			"type":"decision",
-			"parent_task":[
-				"<parent task(s)>"
-			],
-			"child_task":[
-				"<child tasks>",
-				..
-			],
+			"task_name": "<task_name>",
+            "task_id": "<task_id>",
+            "type": "api",
+            "parent_task": [
+                "<parent_task(s)>"
+            ],
+            "child_task": [
+                "<child_tasks>",
+            ],
 			"data_from_parent_node":{
-				"TicketSize":"number",
-				"CKYC":"string",
-				"LiRiskScore":"string",
-				"LiAssessedIncome":"string",
-				"EPFO":"string"
+				"<key>": "<value>",
+                "<key>": "<value>",
+                .
 			},
 			"input":{},
 			"output":{},
@@ -401,4 +471,117 @@ def customized_function(**kwargs):
 			kwargs['ti'].xcom_push(key=run_id, value=task_data)
 			print(f"child_tasks {child_tasks}")
 			print(f"result_task {result_task}")
+			
+			# TODO find out the reason behind this
+			
 			return list(set(child_tasks) - set(result_task))[0]
+		
+	elif task_info.get('type') == 'termination':
+		"""
+		Sample Struct
+		
+		{
+            "task_name": "<task_name>",
+	        "task_id": "<task_id>",
+	        "type": "api",
+	        "parent_task": [
+	            "<parent_task(s)>"
+	        ],
+	        "child_task": [
+	            "<child_tasks>",
+	        ],
+            "data_from_parent_node": {
+	            "<key>": "<value>",
+	            "<key>": "<value>",
+	            .
+	        },
+            "input": {},
+            "output": {},
+            "retries": 5,
+            "max_retry_delay": 3600,
+            "exponential_retry": true,
+            "retry_delay": 30,
+            "method": "<method>",
+	        "url": "<url>",
+	        "response": {
+	            "<status_code>": {
+	                "<key>": "<value>",
+	                "<key>": "<value>",
+	                ...
+	            },
+	            "<status_code>": {
+	                "<key>": "<value>",
+	                "<key>": "<value>",
+	                ...
+	            },
+	            ..
+	        }
+        }
+		"""
+		
+		# pull data from parent task(s)
+		task_data = task_instance.xcom_pull(key=run_id, task_ids=parent_tasks)
+		task_data = dict_merge(task_data)
+		
+		# get the response body structure needed to be stored in dynamodb
+		response_structure = task_info.get('response', dict())
+		url = task_info.get('url', '')
+		
+		# map the status from previous task
+		# NOTE: this will only be applicable if the termination is initiated by a parent node having type as `api`
+		status = task_data.get('status')
+		
+		try:
+			user_input = kwargs['dag_run'].conf['request']['params']
+			task_data.update(user_input)
+		
+		except Exception as e:
+			print(e)
+			pass
+		
+		if status:
+			# remove redundant keys
+			cleanup = list()
+			
+			# adhoc code # TODO replace
+			# removes status codes from the values if the type is `map`
+			# (removed at the time of creating the intrepretable dag file)
+			logging.debug(f"workflow response structure {response_structure}")
+			logging.debug(f"status {status}")
+			for k, v in response_structure.items():
+				if isinstance(v, dict):
+					for k1, v1 in v.items():
+						v[k1] = v1.replace(k, '').strip('.') if v1.__contains__('.') else v1
+			try:
+				for key, val in response_structure.items():
+					if int(status) != int(key):
+						cleanup.append(key)
+			except Exception as e:
+				logging.error(f'exception {e}')
+				pass
+			for key in cleanup:
+				response_structure.pop(key)
+			
+			for key, val in response_structure.items():
+				response_structure['data'] = val
+				response_structure.pop(key)
+				break
+			
+			response_structure['status_code'] = task_data.get('status')
+		
+		response_structure['run_id'] = kwargs['dag_run'].conf['run_id']
+		data = flatten(task_data, '', dict())
+		
+		logging.info(f"data {data}")
+		payload = construct_json(response_structure, data)
+		
+		data_from_parent = task_info.get('data_from_parent_node', {})
+		
+		payload = filter_response(data_from_parent, payload)
+		
+		logging.info('payload', payload)
+		
+		response = requests.post(url=url, json=payload)
+		logging.info("termination response", response, response.text)
+		
+		return task_info.get('child_task')[0]
