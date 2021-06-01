@@ -350,7 +350,7 @@ def customized_function(**kwargs):
 		payload = construct_json(request_structure, data)
 		
 		data_from_parent = task_info.get('data_from_parent_node', {})
-		payload = filter_response(data_from_parent, payload)
+		payload['data'] = filter_response(data_from_parent, payload['data'])
 		
 		print('payload', payload)
 		
