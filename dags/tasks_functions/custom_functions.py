@@ -349,6 +349,8 @@ def customized_function(**kwargs):
 		print('data', data)
 		payload = construct_json(request_structure, data)
 		
+		logging.info(f"payload {payload}")
+		
 		data_from_parent = task_info.get('data_from_parent_node', {})
 		payload['data'] = filter_response(data_from_parent, payload['data'])
 		
@@ -443,3 +445,4 @@ def customized_function(**kwargs):
 		
 		# response = requests.post(url=url, headers=headers)
 		return task_info.get('child_task')[0]
+

@@ -1,4 +1,4 @@
-FROM python:3.8-slim-stretch
+FROM python:3.8-slim
 
 ENV     DEBIAN_FRONTEND noninteractive
 ENV     TERM linux
@@ -37,6 +37,7 @@ RUN         set -ex \
 	&&  pip install SQLAlchemy==1.3.23 \
 	&&  pip install Flask-SQLAlchemy==2.4.4 \
         &&  pip3 install -r /requirements.txt \
+	&&  pip install apache-airflow-providers-amazon \
         &&  apt-get remove --purge -yqq $buildDeps libpq-dev \
         &&  apt-get clean \
         &&  rm -rf \
@@ -54,7 +55,7 @@ RUN         set -ex \
 COPY    ./dags ${AIRFLOW_HOME}/dags
 # COPY    script/entrypoint.sh ${AIRFLOW_HOME}/entrypoint.sh
 
-COPY    script/entrypoint-postgres.sh ${AIRFLOW_HOME}/entrypoint.sh
+COPY    script/entrypoint-Neil.sh ${AIRFLOW_HOME}/entrypoint.sh
 COPY    config/airflow.cfg ${AIRFLOW_HOME}/airflow.cfg
 
 RUN     mkdir ${AIRFLOW_HOME}/plugins
